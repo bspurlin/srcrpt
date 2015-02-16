@@ -1,0 +1,4 @@
+commercial
+(?:re)?licen[cs]e.{0,8}? QQ
+public domain
+patent

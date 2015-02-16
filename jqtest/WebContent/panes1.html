@@ -1,0 +1,330 @@
+<html>
+
+
+  <!--
+
+    Copyright © 2012, International Business Machines
+
+    This file is part of SrcRpt.
+  
+    SrcRpt is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, version 2.0.
+
+    SrcRpt is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SrcRpt.  If not, see http://www.gnu.org/licenses/.
+
+  -->
+
+  <!-- author wj@spurlin.org -->
+
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="language" content="en" />
+
+<title>Transform Tests</title>
+<link rel="stylesheet" type="text/css"
+	href="css/layout-default-latest.css" />
+<link rel="stylesheet" type="text/css" href="css/jquery.ui.all.css" />
+<style type="text/css">
+/* remove padding and scrolling from elements that contain an Accordion */
+/* .ui-layout-center,  wjs has content-div */
+.ui-layout-west /* has Accordion */ { /* content-div has Accordion */
+	padding: 0;
+	overflow: hidden;
+}
+
+.ui-layout-center TD.ui-layout-content {
+	line-height: 1.4em;
+	margin: 0; /* remove top/bottom margins from <P> used as content-div */
+}
+
+h3,h4 { /* Headers & Footer in Center pane */
+	font-size: 1.1em;
+	background: #EEF;
+	border: 1px solid #BBB;
+	border-width: 0 0 1px;
+	padding: 7px 10px;
+	margin: 0;
+}
+
+/* Menu bar */
+
+#menubar{
+	list-style:none;
+	font-weight:bold;
+	margin-bottom:1px;
+	/* Clear floats */
+	float:left;
+	width:100%;
+	/* Bring the nav above everything else--uncomment if needed.
+	position:relative;
+	z-index:5;
+	*/
+}
+
+
+#menubar li{
+	float:left;
+	margin-right:10px;
+	position:relative;
+}
+#menubar a{
+	display:block;
+	padding:5px;
+	color:#fff;
+	background:#333;
+	text-decoration:none;
+}
+#menubar a:hover{
+	color:#fff;
+	background:#6b0c36;
+	text-decoration:underline;
+}
+
+/*--- DROPDOWN ---*/
+#menubar ul{
+	background:#fff; /* Adding a background makes the dropdown work properly in IE7+. Make this as close to your page's background as possible (i.e. white page == white background). */
+	background:rgba(255,255,255,255); /* But! Let's make the background fully transparent where we can, we don't actually want to see it if we can help it... */
+	border: 1px solid #BBB;
+	list-style:none;
+	position:absolute;
+	top: 20px;
+	left:-9999px; /* Hide off-screen when not needed (this is more accessible than display:none;) */
+}
+#menubar ul li{
+	padding-top:1px; /* Introducing a padding between the li and the a give the illusion spaced items */
+	float:none;
+}
+#menubar ul a{
+	white-space:nowrap; /* Stop text wrapping and creating multi-line dropdown items */
+}
+#menubar li:hover ul{ /* Display the dropdown on hover */
+	left:0; /* Bring back on-screen when needed */
+}
+#menubar li:hover a{ /* These create persistent hover states, meaning the top-most link stays 'hovered' even when your cursor has moved down the list. */
+	background:#6b0c36;
+	text-decoration:underline;
+}
+#menubar li:hover ul a{ /* The persistent hover state does however create a global style for links even before they're hovered. Here we undo these effects. */
+	text-decoration:none;
+}
+#menubar li:hover ul li a:hover{ /* Here we define the most explicit hover states--what happens when you hover each individual link. */
+	background:#333;
+}
+
+</style>
+
+<link href="css/jquery-ui-1.8.16.custom.css" />
+<script type="text/javascript" src="js/jquery-1.5.2.js"></script>
+<script type="text/javascript" src="js/jquery-ui-1.8.16.custom.min.js"></script>
+<script type="text/javascript" src="js/jquery.layout-latest.js"></script>
+
+<script type="text/javascript" src="js/themeswitchertool.js"></script>
+<script type="text/javascript" src="js/debug.js"></script>
+<script type="text/javascript" src="js/jqueryFileTree.js"></script>
+
+<script type="text/javascript" src="js/jquery.transform.js"></script>
+
+<script type="text/javascript">
+	var xmlfn;
+	var xslfn;
+	var xmlcache = [];
+	var xslcache = [];
+	function onSuccessCache(html, xsl, xml, obj) {
+		//alert("xslobj = " + obj.xslobj + "\n" +  xslcache[xslfn]);
+		if (xslcache[xslfn]) {
+		} else {
+			xslcache[xslfn] = obj.xslobj;
+		}
+		if (xmlcache[xmlfn]) {
+		} else {
+			xmlcache[xmlfn] = obj.xmlobj;
+		}
+		var s = (new XMLSerializer()).serializeToString(xmlcache[xmlfn]);
+		s = s.replace(new RegExp('<', 'gim'), '&lt;');
+		$("#center-2").html("<pre>" + s + "</pre>");
+		s = (new XMLSerializer()).serializeToString(xslcache[xslfn]);
+		s = s.replace(new RegExp('<', 'gim'), '&lt;');
+		$("#center-3").html("<pre>" + s + "</pre>");
+	}
+	var XMLload = function(xmlfile, xslfile) {
+		var xml_str = "getFile?filename=" + xmlfile;
+		var xsl_str = "getFile?filename=" + xslfile; //alert ("xml_str="+xml_str+"\txsl_str=" + xsl_str);
+
+		var arg1 = xmlcache[xmlfn];
+		var arg2 = xslcache[xslfn];
+
+		var transformargs = {
+			xmlobj : arg1 ? arg1 : null,
+			xslobj : arg2 ? arg2 : null,
+			xml : arg1 ? null : xml_str,
+			xsl : arg2 ? null : xsl_str,
+			success : onSuccessCache
+		};
+
+		$("#center-1").transform(transformargs);
+
+	}
+
+	var myLayout, $westAccordion;
+
+	$(document).ready(function() {
+		// simple Accordion
+		myLayout = $('body').layout({
+			west__size : 300
+			// RESIZE Accordion widget when panes resize
+			,
+			west__onresize : function() {
+				$("#list1").accordion("resize");
+			},
+			center__onresize : function() {
+			}
+			
+		});
+
+		
+		// ACCORDION - in the West pane
+		$westAccordion = $("#list1").accordion({
+			fillSpace : true,
+			active : 0,
+			create :
+
+			function() {
+
+				$('#xmlfileopen').fileTree({
+					root : '/temp/SrcRpt/xml',
+					script : 'jqueryFileTree.jsp'
+				}, function(file) {
+					xmlfn = file;
+					$("#xmlfn").html("<h6>" + xmlfn + "</h6>");
+				});
+
+				$('#xslfileopen').fileTree({
+					root : '/temp/SrcRpt/xsl',
+					script : 'jqueryFileTree.jsp'
+				}, function(file) {
+					xslfn = file;
+					$("#xslfn").html("<h6>" + xslfn + "</h6>");
+				});
+
+			}
+
+		});
+	}); //$(document).ready
+</script>
+
+<script>
+	$(function() {
+		$("#center").tabs();
+	});
+</script>
+
+<script type="text/javascript">
+
+function refresh(a) {
+	
+	alert(a);
+}
+
+function nukem(a,b,c,d) {
+	
+	alert(a "\n" b "\n" c "\n" d);
+}
+
+</script>
+
+</head>
+<body>
+	<div id="center" class="ui-layout-center">
+
+		<ul>
+			<li><a href="#center-1">Output</a></li>
+			<li><a href="#center-2">XML</a></li>
+			<li><a href="#center-3">XSL</a></li>
+		</ul>
+		<div class="ui-layout-content">
+			<div id="center-1"></div>
+			<div id="center-2"></div>
+			<div id="center-3"></div>
+		</div>
+	</div>
+
+	<div
+		class="ui-layout-south ui-widget-content ui-state-error ui-layout-pane "
+		style="position: absolute; margin: 0px; top: auto; bottom: 0px; left: 0px; right: 0px; width: auto; z-index: 1; visibility: visible; height: 1px;">
+		<table>
+			<tr>
+				<td>
+					<button onclick="XMLload(xmlfn,xslfn)"
+						class="ui-button ui-button-text-only ui-widget ui-state-default ui-corner-left">
+						<span class="ui-button-text">Transform</span>
+					</button>
+				</td>
+				<td id="xmlfn"></td>
+				<td id="xslfn"></td>
+			</tr>
+		</table>
+	</div>
+	<div class="ui-layout-west" style="display: none;">
+		<h3 class="ui-widget-header">File</h3>
+
+		<div class="ui-layout-content">
+			<div id="list1" class="basic">
+				<h4>
+					<a href="#">XML Open</a>
+				</h4>
+				<div id="xmlfileopen"></div>
+				<h4>
+					<a href="#">XSL Open</a>
+				</h4>
+				<div id="xslfileopen"></div>
+			</div>
+		</div>
+	</div>
+	<div class="ui-layout-north"
+		onmouseover="myLayout.allowOverflow(this)" 
+		style="overflow: visible">
+		<ul id="menubar">
+			<li>
+				<ul>
+					<li>Open...</li>
+					<li>Save As...</li>
+					<li>Save</li>
+					<li>Compare...</li>
+				</ul> File
+			</li>
+			<li>
+				<ul>
+					<li>
+
+						<table>
+							<tr>
+								<td><INPUT type="radio" name="diffonoff" checked="true"
+									onclick=javascript:parent.diffOff('xxx') >Old Diffs</input> <br></br>
+
+									<INPUT type="radio" name="doneonoff" checked="true"
+									onclick=javascript:parent.doneOff('xxx') >Done</input> <br></br>
+
+									<BUTTON name="refresh" onclick=javascript:parent.refresh('xxx') >Refresh</BUTTON>
+								</td>
+							</tr>
+						</table>
+					</li>
+					<li>two</li>
+				</ul> View
+			</li>
+		</ul>
+		<!-- 
+
+	 -->
+	</div>
+
+</body>
+</html>

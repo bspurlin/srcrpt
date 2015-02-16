@@ -1,0 +1,3027 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+
+<!--
+
+
+    Copyright ©, 2004-2015, International Business Machines
+
+    This file is part of SrcRpt.
+  
+    SrcRpt is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, version 2.0.
+
+    SrcRpt is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SrcRpt.  If not, see http://www.gnu.org/licenses/.
+
+-->
+
+<head>
+  <meta http-equiv="CONTENT-TYPE"
+ content="text/html; charset=iso-8859-1">
+  <title>SrcRpt README</title>
+  <style type="text/css">
+    <!--
+    .x2controls {
+        font-family: Geneva, Arial, Helvetica, s<s-serif;
+        font-size: 12px;
+        font-weight: bold;
+        background-color: #DDCCCC;
+    }
+
+	.exbut {
+ 		BORDER: none; 
+ 		FONT: smaller sans-serif;
+ 		Z-INDEX: 3; 
+ 		BACKGROUND: #d0d0c8;
+	}
+
+    -->
+   </style>
+
+<script type="text/javascript" src="srcrpt.js"></script>
+<script>
+var compare;
+
+var CWD = ".";
+
+function setCompare(i) {
+    compare = i;
+}
+
+var menuPopup = window.createPopup()
+    
+function doFileMenu(oHeight)
+{
+    menuPopup.document.body.innerHTML = fileMenuDiv.innerHTML;
+    menuPopup.show(event.offsetX, event.offsetY + 30, 80, oHeight, document.body);
+    document.body.onmouseup = menuPopup.hide;
+}
+
+function doViewMenu(oHeight)
+{
+    menuPopup.document.body.innerHTML = viewMenuDiv.innerHTML;
+    menuPopup.show(event.offsetX, event.offsetY + 30, 80, oHeight, document.body);
+    document.body.onmousedown = menuPopup.hide;
+}
+
+function dummy(p,a,b,c,d,e) {
+}
+
+function nukem(p, id) {
+	//alert("nukem: p=" + p + "\nid=" + id);
+	event.returnValue=false;
+    if(id == 'keywordTable') {
+    	menuPopup.document.body.innerHTML = nukeKeyMenuDiv.innerHTML;
+    } else {
+    	if (id == 'nukeUL') {
+    		menuPopup.document.body.innerHTML = nukeULMenuDiv.innerHTML;
+	    } else {
+		    alert("unknown id " + id);
+    	}
+    }
+    menuPopup.show(event.offsetX, event.offsetY + 30, 180, 120, document.body);
+	// The following nukes the id in the HTML, not the XML, so when the
+	// HTML has to be refreshed by processnow() so the HTML id reverts to
+	// the original value.
+    var element = document.getElementById(p);
+    if (element) { 
+    	//alert("nukem element: id=" + element.id); 
+    	element.id = id;
+    }
+}
+
+</script>
+
+</head>
+<body dir="ltr" lang="en-US">
+<hr>
+<hr>
+<h1>SrcRpt&nbsp; <a href="#scanning">Quick Start</a></h1>
+
+<br>
+<hr>
+<hr><br>
+<blockquote>
+<h3><a name="table"></a>Table of Contents</h3>
+</blockquote><ul>
+  <a href="#howto">How to Scan Software</a> <br>
+  <ul>
+    <li><a href="#what2scan">What to Scan</a></li>
+    <li><a href="#adhockeywords">Ad hoc keyword lists</a></li>
+    <li><a href="#regexps">Regular expressions</a></li>
+    <li><a href="#elimination">Elimination of keywords from the
+standard list</a></li>
+    <li><a href="#copyrholder">The Copyright Holder scan</a></li>
+    <li><a href="#proprietary">Scanning proprietary code</a></li>
+  </ul>
+  <a name="anatop"></a>
+  <a href="#analysis">Analysis Phase</a>
+  <ul>
+  		<li><a href="#uniqline">The Uniqline</a></li>
+		<li><a href="#running">Loading and Running</a></li>
+		<li><a href="#loading">Reports and Buttons</a></li>
+		<li><a href="#rightclick">Right-clicking a keyword or hit to
+		annotate it</a>.<li><a href="#rightclick">Marking a hit as "Done" (green) or
+		"Active" (red)</a>.</li>
+		<li><a href="#nukefil">Marking all the hits in a file as "Done" (green)</a>.</li>
+		<li><a href="#analyze">The Analysis button and report</a></li>
+		<li><a href="#opening">Opening and Highlighting Source Code</a></li>
+		<li><a href="#typical">All Keywords Report</a></li>
+		<li><a href="#rightclick">Single Keyword with Hits Report</a></li>
+		<li><a href="#compare">Compare an earlier scan to the scan
+		being analyzed</a></li>
+		<li><a href="#diff">Diff Scans</a></li>
+	</ul>
+  <a href="#scanning">Scan Phase</a>
+  <ul>
+    <li> <a href="#requirements">Requirements</a></li>
+    <li><a href="#usage">Usage</a></li>
+    <li> <a href="#command">Command Line</a></li>
+		<li><a href="#chunking">Chunking</a></li>
+		<li><a href="#keywords">The Keyword/Keyphrase File</a>
+    </li>
+    <li> <a href="#features">Features and Behavior</a> </li>
+    <li> <a href="#zip">Zipping for Transmission</a> </li>
+    <li> <a href="#create_scan_dir">The "create_scan_dir" Utility </a>
+    </li>
+  </ul>
+</ul>
+<p><b>SrcRpt (or "source report") is a tool for the scanning and
+analysis of a body
+of source code based on keywords and keyphrases.</b> <br>
+</p>
+<p>Srcrpt and its derviatives have been successful because SrcRpt introduced the concept of the <a
+	href="#uniqline">Uniqline</a>.</p>
+<p><br>
+SrcRpt    is used in two separate phases: the scan and the
+analysis. The scan can take place on any platform on which Perl can be
+installed. The analysis takes place using Internet Explorer 6.0 or above
+on MS Windows, using the XML/XSLT and HTML Application features of IE.
+Binaries are not scanned, although a list of binaries that SrcRpt encounters is placed in the Headers report.</p>
+<p>Usually the scan and the analysis are carried out by different
+groups. No software has to be installed for the analysis. A utility is
+provided to assist in zipping up the scan and its auxiliary files for
+transmission from the group doing the scan to the group doing the
+analysis.</p>
+<a name="howto">
+</a>
+<hr>
+<hr>HOW TO SCAN SOFTWARE (go <a
+ href="#scanning">here</a> for SrcRpt scanner instructions and command
+line options)&nbsp;&nbsp; &nbsp;&nbsp; <a href="#table">Top</a><br>
+<br>
+Attorneys often require that software be scanned - the lawyers will not
+be "comfortable" with a piece of software until it has been scanned and
+the scan has been analyzed.&nbsp; Although the lawyers themselves will
+readily admit that they are never really completely "comfortable" with
+any software, their level of "comfort" will be increased if the
+analysis of the scan shows that the software is of low risk.<br>
+<br>
+There are certain areas that are associated with high risk:<br>
+<ul>
+  <li>Redistribution of General
+Public License (GPL) and Lesser General Public License (LGPL) licensed
+software, and other software that requires redistribution under the original license.</li>
+  <li>Meeting or failing to meet third party licensing requirements
+when redistributing software.</li>
+  <li>Redistributing software that is of unknown or suspect
+pedigree;&nbsp; e. g., Open Source software for which the authors did
+not have sufficient rights to make the contribution to Open Source.</li>
+  <li>Unknowingly redistributing software that is of third party origin.<br>
+  </li>
+</ul>
+<br>
+In all situations involving source code scanning it is best to keep them
+overall goal in mind:&nbsp; reducing risk.&nbsp; With risk reduction in
+mind, the most important of the scanning topics below is "What to scan".<br>
+<br>
+SrcRpt was designed to assist attorneys in their efforts to reduce
+the risks of redistributing Open Source Software, and in the
+process of performing Due Diligence when contributing software to Open
+Source, acquiring software companies and divesting software.&nbsp; Some
+companies require all proprietary code to be scanned before a
+product may be shipped. All of these business activities involve some risk.&nbsp; Source code scanning is one tool to analyze risk.&nbsp;There is a variety of commercial software available to accomplish some of the same ends as SrcRpt, e.g. Black Duck ProtexIP.&nbsp; <br>
+<br>
+Keyword or keyphrase scanning will not produce meaningful results from
+scanning binaries and will not produce hits on keywords or phrases not
+scanned for.&nbsp; The sentence "The following code was stolen from
+Richard Stallman" will not produce a hit from the sample keyword list that accompanies this distribution. Anyone concerned about such constructs had better add the
+keyword "from", "stolen" or "stole!" to the keyword list. Another
+limitation of
+keyword scanning is the large
+number of spurious hits ("clutter" or "noise") sometimes
+encountered.&nbsp; The keyword "from" will significantly increase the clutter, but
+is useful when&nbsp; scanning smaller bodies of code.&nbsp; See <a
+ href="README.html#keywords">The Keyword/Keyphrase File</a><br>
+<br>
+<br>
+Topics in software scanning:<br>
+<ul>
+  <li><a href="#what2scan">What to scan</a></li>
+  <li><a href="#adhockeywords">Ad hoc keyword lists</a></li>
+  <li><a href="#regexps">Regular expressions</a></li>
+  <li><a href="#elimination">Elimination of keywords from the standard
+list</a></li>
+  <li><a href="#copyrholder">The Copyright Holder scan</a></li>
+  <li><a href="#proprietary">Scanning Yoyodyne proprietary code</a><br>
+  </li>
+</ul>
+<h3><a name="what2scan"></a>What to Scan&nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; </h3><a
+ href="#table">Top</a><br>
+<br>
+
+<div style="margin-left: 40px;">These remarks apply to distribution or
+redistribution of software, not acquisitions.<br>
+<br>
+Keep in mind that the purpose of scanning is to reduce risk.&nbsp; When
+redistributing third party binaries or distributing binaries buiilt
+from original code <span style="font-weight: bold;">the risk is in the
+binaries</span>; what goes out the door.&nbsp; Items that do not ship,
+or do not build into binaries that ship, need not be scanned.<br>
+<br>
+There are three techniques used with SrcRpt to limit scanning to the
+body of source code from which binaries are built<br>
+<br>
+<br>
+1.&nbsp; Scanning from a list of files using the -I &lt;file of file
+paths&gt; option.
+<div style="margin-left: 40px;">A list of files to be scanned can
+sometimes be automatically or
+semiautomatically generated from software configuration management
+metadata, especially ClearCase when build auditing is in use.&nbsp;
+Following is a short excerpt from a file so generated:<br>
+<br>
+...<br>
+vobs/3rdparty/icu/stage/include/unicode/utf32.h<br>
+vobs/3rdparty/icu/stage/include/unicode/utf8.h<br>
+vobs/3rdparty/icu/stage/include/unicode/utypes.h<br>
+vobs/3rdparty/icu/stage/include/unicode/uversion.h<br>
+vobs/X11/xc/config/util/makestrs<br>
+vobs/X11/xc/config/util/makestrs.c<br>
+vobs/X11/xc/include/X.h<br>
+vobs/X11/xc/include/Xalloca.h<br>
+vobs/X11/xc/include/Xatom.h<br>
+vobs/X11/xc/include/Xfuncproto.h<br>
+vobs/X11/xc/include/Xfuncs.h<br>
+vobs/X11/xc/include/Xmd.h<br>
+vobs/X11/xc/include/Xos.h<br>
+vobs/X11/xc/include/Xos_r.h<br>
+vobs/X11/xc/include/Xosdefs.h<br>
+vobs/X11/xc/include/Xpoll.h<br>
+vobs/X11/xc/include/Xproto.h<br>
+vobs/X11/xc/include/Xprotostr.h<br>
+vobs/X11/xc/include/Xthreads.h<br>
+...<br>
+<br>
+Note that the pathnames are relative to the directory from which the
+scan is run.&nbsp; In this case "vobs" is a symbolic link to the
+ClearCase view root directory.<br>
+<br>
+</div>
+2. &nbsp;&nbsp; Eliminating files by their suffixes/prefixes using the
+-X &lt;prefix,...&gt; and -x &lt;suffix,...&gt; options. <br>
+<br>
+<div style="margin-left: 40px;">Following are some examples of&nbsp;
+SrcRpt command lines using the -x and -X options:<br>
+<span style="font-weight: bold;">perl source_report.pl -f
+keywords_2006_02_02.txt -d build.buildforge.1 -X Makefile -x
+phpt,.mk,makefile,.sh,ignore,.in -o
+php.build.buildforge.copyr.4.srcrpt.xml<br>
+</span>In this example build-only files (Makefiles; build related
+scripts) and test only files (with the extension phpt) are not scanned.<br>
+<br>
+SrcRpt will list files that are not scanned in the Headers
+report.&nbsp; Following is an extract from a Headers report generated
+with the following command line:<br>
+<span style="font-weight: bold;"><br>
+perl source_report.pl -f keywords_2005_07_28_less_apache.txt -d
+xml-batik.1.5 -c xml-batik.1.6 -x
+xml,html,svg,properties,mod,dtd,xsl,sh,bat,css -o
+batik.1.5.diff.1.6.srcrpt.5.xml</span><br>
+<br>
+<br>
+<table border="1">
+  <tbody>
+    <tr>
+      <th>Exclusions: 1452 files not scanned with prefixes or suffixes</th>
+    </tr>
+    <tr>
+      <td>xml</td>
+    </tr>
+    <tr>
+      <td>html</td>
+    </tr>
+    <tr>
+      <td>svg</td>
+    </tr>
+    <tr>
+      <td>properties</td>
+    </tr>
+    <tr>
+      <td>mod</td>
+    </tr>
+    <tr>
+      <td>dtd</td>
+    </tr>
+    <tr>
+      <td>xsl</td>
+    </tr>
+    <tr>
+      <td>sh</td>
+    </tr>
+    <tr>
+      <td>bat</td>
+    </tr>
+    <tr>
+      <td>css</td>
+    </tr>
+  </tbody>
+</table>
+<div>
+<p>
+<table border="1">
+  <tbody>
+    <tr>
+      <th>Files excluded by prefix or suffix</th>
+    </tr>
+    <tr>
+      <td>xml-batik.1.5/build.bat</td>
+    </tr>
+    <tr>
+      <td>xml-batik.1.5/build.sh</td>
+    </tr>
+    <tr>
+      <td>xml-batik.1.5/build.xml</td>
+    </tr>
+    <tr>
+      <td>xml-batik.1.5/contrib/charts/convert.bat</td>
+    </tr>
+    <tr>
+      <td>xml-batik.1.5/contrib/charts/convert.sh</td>
+    </tr>
+    <tr>
+      <td>xml-batik.1.5/contrib/charts/lcp.bat</td>
+    </tr>
+    <tr>
+      <td>xml-batik.1.5/contrib/charts/xml/data.xml</td>
+    </tr>
+    <tr>
+      <td>xml-batik.1.5/contrib/charts/xsl/bar.xsl</td>
+    </tr>
+    <tr>
+      <td>...</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+</div>
+<span style="font-weight: bold;">Caution:</span> check the "Files
+excluded by prefix or suffix" table carefully to ensure that files
+contributing to the build were not skipped.&nbsp; In the above example
+it is not immediately obvious that files with extensions "svg" and
+"xsl" should not be scanned.&nbsp; Examination of the directories
+shows, however, that such files are only in the documentation or test
+directories, neither of which contribute to the jar that is shipped.<br>
+<br>
+<span style="font-weight: bold;">Caution:</span>&nbsp; When excluding
+files by suffix, e. g., ".html", ".doc", recognize that important
+information may be skipped, even if it does not directly contribute to
+risk by being part of the build.&nbsp; A file named "License.html" or
+"COPYRIGHT.DOC" is likely to contain important legal information that
+needs to be analyzed by the legal team.<br>
+<span style="font-weight: bold;"></span></div>
+<br>
+3. &nbsp; Eliminating directories - paring down a directory tree by deleting, for scanning
+purposes, subdirectories that are not built - optional features,
+contributions, extensions, etc.This may be done on the command line with the -y switch
+with a comma-delimited list of directories as an argument, e. g., "-y xdocs,STATUS"<br>
+<br>
+<div style="margin-left: 40px;">Cooperation with Release Engineering is
+essential to knowing that the pared-down directory tree will actually
+build objects that are shipped.<br>
+</div>
+<br>
+<a name="adhockeywords"></a></div><h3>Ad Hoc Keyword Lists&nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; <a href="#table">Top</a></h3><br>
+<br>
+
+<div style="margin-left: 40px;">It is often advantageous to create a
+keyword list for a special purpose.&nbsp; Suppose, for example, a
+diff-scan shows a bunch of author names. Were those authors present in
+the basis code?&nbsp; Create a keyword list of the author surnames and
+run it against the original base of code to determine if the authors
+are unique to the later code, or not.<br>
+<br>
+In patent-related investigations it can be useful to create a keyword
+list related to the technology area under investigation,&nbsp; "lossy",
+"lossless", "codec" and "huffman" might be useful keywords in a patent
+investigation of compression software. <br>
+<br>
+</div>
+<h3><a name="regexps"></a>Regular Expressions&nbsp;&nbsp; &nbsp;&nbsp;</h3>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <a
+ href="#table">Top</a><span
+ style="text-decoration: underline;"><br>
+<br>
+</span>
+<div style="margin-left: 40px;">See <a href="README.html#keywords">The
+Keyword/Keyphrase File</a>. An example of a regular expression: <br>
+<span style="font-weight: bold;">copyright(?!.{1,48}yoyodyne|.{1,48}international)
+QQ<br>
+</span>The above expression is intended to detect any non-Yoyodyne International copyright
+statement.<br>
+<br>
+Another example:<br>
+<span style="font-weight: bold;">\(c\)|.\#169\;|.copy\;|&copy; QQ</span><br>
+This expression is meant to find all copyright statement related
+symbols in addition to the familiar "(C)".&nbsp; Note that certain
+characters have to be escaped with "\".<br>
+<span style="font-weight: bold;"></span></div>
+<br>
+<h3><a name="elimination"></a>Elimination of keywords from the standard
+list&nbsp;&nbsp; &nbsp;&nbsp;</h3> <a
+ href="#table">Top</a>
+<div style="margin-left: 40px;"><br>
+When scanning very large bodies of code, or under time pressure, it may
+be advantageous to create a shorter keyword/keyphrase list using the
+standard list as a basis.&nbsp; Do this in consultation with the IP
+attorney on the project.&nbsp; See <a href="README.html#keywords">The
+Keyword/Keyphrase File</a> for suggestions on which keywords are of
+lower priority.&nbsp; <br>
+<br></div>
+<h3><a name="copyrholder"></a>The Copyright Holder
+scan </h3> <a href="#table">Top</a><br>
+<br>
+
+<div style="margin-left: 40px;">This report can greatly speed the identification of&nbsp;
+copyright holders for outbound licensing requirements or in acquisitions, particularly for
+larger bodies of code.<br>
+<br>
+The Copyright Holder scan attempts to define a grammar of copyright
+statements, and recursively parse all code contexts containing the
+keyword "copyright!" or any of three copyright symbols based on that
+grammar.<br>
+<br>
+The Copyright Holder scan is generated separately from a normal
+SrcRpt scan, with the -r switch in place of the -f &lt;keyword file&gt;
+switch.&nbsp; No keyword file is used for the Copyright Holder
+report.&nbsp; See <a href="#copyrcommandl">here</a> for an example of
+a Copyright scan command line.&nbsp; Following is an example of the top
+level copyright holder report for a large subset of PHP 5.1.2:<br><p>
+Do not try to combine Copyright Holder scans with keyword scans.  They must be separate scans.</p>
+<p>Q:<i> Does the keyword scan pick up everything that the Copyright
+Holder scan does?</i></p>
+<p>A: <i>The keyword scan should pick up everything that the
+copyright holder scan does. The copyright holder scan is meant for
+larger bodies of code when the results of the keyword scan are so
+voluminous that it becomes difficult to analyze without missing
+something.<br>
+<br>
+The copyright holder scan is meant as a top-level view of a large body
+of code. It is meant to supplement the keyword scan. It is meant for use
+particularly in acquisitions when there is a time constraint.<br>
+<br>
+The copyright holder scan may allow you to find something in a large
+body of code that you might miss with the keyword scan.<br>
+<br>
+For small bodies of code, use only the keyword scan.</i></p>
+<p>
+<br>
+<table border="1">
+  <tbody>
+    <tr>
+      <th>Keyword</th>
+      <th>ULs</th>
+      <th>Tot</th>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('and onwards Google')">and onwards
+Google</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Andi Gutmans, Sascha')">Andi
+Gutmans, Sascha</a></td>
+      <td width="25%">1</td>
+      <td width="25%">3</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Apache Group')">Apache Group</a></td>
+      <td width="25%">1</td>
+      <td width="25%">2</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('AT&T')">AT&amp;T</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('copyright!')">copyright!</a></td>
+      <td width="25%">165</td>
+      <td width="25%">390</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('David Shafik and')">David Shafik
+and</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Dieter Baron and')">Dieter Baron
+and</a></td>
+      <td width="25%">1</td>
+      <td width="25%">41</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Digital Equipment Corporation')">Digital
+Equipment Corporation</a></td>
+      <td width="25%">1</td>
+      <td width="25%">3</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Downhill Project')">Downhill
+Project</a></td>
+      <td width="25%">1</td>
+      <td width="25%">3</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Free Software Foundation,')">Free
+Software Foundation,</a></td>
+      <td width="25%">1</td>
+      <td width="25%">13</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Google Inc')">Google Inc</a></td>
+      <td width="25%">1</td>
+      <td width="25%">13</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Greg Beaver ')">Greg Beaver </a></td>
+      <td width="25%">1</td>
+      <td width="25%">4</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Henry Spencer')">Henry Spencer</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Yoyodyne,')">Yoyodyne,</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Jochen Obalek')">Jochen Obalek</a></td>
+      <td width="25%">1</td>
+      <td width="25%">2</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Lachlan Roche')">Lachlan Roche</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Makoto Matsumoto and')">Makoto
+Matsumoto and</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Martin Pool')">Martin Pool</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Open Market, Inc')">Open Market,
+Inc</a></td>
+      <td width="25%">1</td>
+      <td width="25%">10</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('PHP Group')">PHP Group</a></td>
+      <td width="25%">1</td>
+      <td width="25%">374</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('PHP Group ')">PHP Group </a></td>
+      <td width="25%">1</td>
+      <td width="25%">230</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('PHP Group REM')">PHP Group REM</a></td>
+      <td width="25%">1</td>
+      <td width="25%">3</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Ralf S. Engelschall')">Ralf S.
+Engelschall</a></td>
+      <td width="25%">1</td>
+      <td width="25%">6</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Regents of the')">Regents of the</a></td>
+      <td width="25%">1</td>
+      <td width="25%">8</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Regents of University')">Regents
+of University</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Rob Saccoccio and')">Rob
+Saccoccio and</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('RSA Data Security,')">RSA Data
+Security,</a></td>
+      <td width="25%">1</td>
+      <td width="25%">2</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Sascha Schumann')">Sascha Schumann</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Softweyr LLC')">Softweyr LLC</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Todd C. Miller')">Todd C. Miller</a></td>
+      <td width="25%">1</td>
+      <td width="25%">2</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Tux Linux Penguin')">Tux Linux
+Penguin</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('University of Cambridge')">University
+of Cambridge</a></td>
+      <td width="25%">2</td>
+      <td width="25%">43</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('University of Washington')">University
+of Washington</a></td>
+      <td width="25%">1</td>
+      <td width="25%">3</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('year Andi Gutmans')">year Andi
+Gutmans</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Zend Technologies')">Zend
+Technologies</a></td>
+      <td width="25%">1</td>
+      <td width="25%">1</td>
+    </tr>
+    <tr>
+      <td align="left" width="50%"><a
+ href="javascript:dummy('Zend Technologies Ltd')">Zend
+Technologies Ltd</a></td>
+      <td width="25%">1</td>
+      <td width="25%">98</td>
+    </tr>
+  </tbody>
+</table>
+<br>
+Notice the "copyright!" row in the table.&nbsp; This is a catch-all for
+uniquelines that do not conform to the grammar of a copyright
+statement, yet contain the word "copyright" or one of the copyright
+symbols '(c)', '#169;', or '&copy;'.<br>
+<br>
+The Copyright Holder report will contain some anomalies
+- notice <a href="javascript:dummy('year Andi Gutmans')">year
+Andi Gutmans</a> and <span
+ style="color: rgb(0, 0, 238); text-decoration: underline;">and onwards
+Google</span><span style="text-decoration: underline;"> </span>, above
+. <br>
+</div>
+<br>
+<h3><a name="proprietary"></a>Scanning proprietary code</h3>
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; <a
+ href="#table">Top</a>
+<div style="margin-left: 40px;">Probably the company's copyright statements are
+not of interest.&nbsp; Use the regular expression in the above example
+to find non-Yoyodyne copyright statements.&nbsp; Apply similar regular
+expressions to the "all rights reserved" and "(c)" keywords.<br>
+<br>
+A keyword list used to clear Open Source is not necessarily the best for scanning
+proprietary code.&nbsp; It will assist in finding&nbsp; Open Source
+that has crept into nominally proprietary code, but there may be other
+third party code or other legal issues that need to be scanned
+for.&nbsp; Consult with Intellectual Property law before scanning
+proprietary code to see if there is a need to scan for anything other
+than Open Source.<br>
+<br>
+Some groups may require ongoing scanning of proprietary code.&nbsp; The
+SrcRpt diff scan option may be helpful in such cases.&nbsp; Consult
+with the author about enhancements to the diff scan capability that in
+the future will allow diffs to be scanned without the original source
+tree being present.<br>
+</div>
+<br>
+<hr>
+<hr><h3><a name="analysis"></a><font size="6">ANALYSIS
+PHASE
+&nbsp;&nbsp;&nbsp;&nbsp; </font></h3><a
+ href="#table">Top</a>
+<p><br>
+<b>To analyze source scans using the XML/GUI features of
+SrcRpt:</b> <br>
+<br>
+<h3><a name="running"></a><a name="loading"></a>Unzip a scan</h3> created
+with
+the instructions in the <a href="#scanning">SCAN PHASE section </a>
+into a new folder. Then double-click "index.hta" in the new folder.
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; <a
+ href="#table">Top</a><br>
+<br>You will be presented with a
+<a name="menubar"> menu bar</a>
+like this: (<b><i>If you are in IE you may left-click the File and View menus now,</i></b> although no file or view selections will work from this help screen. Try the buttons by opening "index.hta".<p>
+
+<table margin="0" padding="0"
+ style="background-color: rgb(210, 210, 210);" border="0" width="100%">
+  <tbody>
+    <tr>
+      <td width="3"><img alt="" src="res://wmploc.dll/2/1706"
+ height="37" width="2"></td>
+      <td class="x2controls" align="center"> <span  onclick="javascript:doFileMenu(100)"> File </span> </td>
+      <td width="3"><img alt="" src="res://wmploc.dll/2/1706"
+ height="37" width="2"></td>
+      <td class="x2controls" align="center"> <span  onclick="javascript:doViewMenu(130)"> View </span> </td>
+      <td width="3"><img alt="" src="res://wmploc.dll/2/1706"
+ height="37" width="2"></td>
+      <td>
+      <table>
+        <tbody>
+          <tr>
+            <td><button class="x2controls"> Keywords </button></td>
+            <td><button class="x2controls">Analyze</button></td>
+            <td><button class="x2controls"> Keywords Long</button></td>
+            <td><button class="x2controls"> Headers </button></td>
+          </tr>
+        </tbody>
+      </table>
+      </td>
+      <td
+ style="font-family: sans-serif; font-style: normal; font-variant: normal; font-weight: normal; font-size: smaller; line-height: normal; font-size-adjust: none; font-stretch: normal;"
+ border="0" id="prev_next" align="center"> Prev </td>
+      <td> <button class="x2controls">Save Report</button> </td>
+      <td> <button class="x2controls"> Files </button> </td>
+      	<td width="3"><img height="37" width="2" alt="" src="res://wmploc.dll/2/1706"></td>
+	<td align="center" class="x2controls">
+	  Help
+	</td>
+	<td width="3"><img height="37" width="2" alt="" src="res://wmploc.dll/2/1706"></td>	
+      
+      <td id="test"> <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<!-- Menu formatting -->
+<DIV id=fileMenuDiv style="DISPLAY: none">
+
+   <TABLE 	style="BORDER: none; 
+		font-family: sans-serif; 
+		font-size: 14px; 
+		Z-INDEX: 3; 
+		BACKGROUND: #d0d0c8; 
+		LEFT: 0px; 
+		POSITION: absolute; 
+		TOP: 0px; 
+		HEIGHT: 100px">
+
+      <TR><TD id=fileOpenII 
+style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" 
+onclick="javascript:parent.setCompare(0); parent.menuDialog('z4.html',400,600)">Open...
+      </td><tr>
+
+      <tr><td id=fileOpenIII
+style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" 
+onclick="javascript:parent.menuDialog('a.html',100,300)">Save As...
+      </td><tr>
+      
+      <tr><td id=fileOpenIV
+style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" 
+onclick="javascript:parent.parentSave()">Save</INPUT>
+      </td><tr>      
+      
+      <tr><td id=fileOpenV
+style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" 
+onclick="javascript:parent.setCompare(1);parent.menuDialog('z4.html',400,600)">Compare...</INPUT>
+      </td><tr>      
+      
+   </TABLE>
+
+</DIV>
+
+<div id="viewMenuDiv" style="display: none;">
+<table
+ style="border: medium none ; background: rgb(208, 208, 200) none repeat scroll 0%; font-family: sans-serif; font-style: normal; font-variant: normal; font-weight: normal; font-size: smaller; line-height: normal; font-size-adjust: none; font-stretch: normal; z-index: 3; -moz-background-clip: initial; -moz-background-origin: initial; -moz-background-inline-policy: initial; left: 0px; position: absolute; top: 0px; height: 100px;">
+  <tbody>
+    <tr>
+      <td id="viewSelect" style="border: 1px solid black;"> <input
+ name="diffonoff" checked="true"
+ onclick="javascript:parent.dummy('xxx')" type="radio">Old Diffs <br>
+      <br>
+      <input name="doneonoff" checked="true"
+ onclick="javascript:parent.dummy('xxx')" type="radio">Done <br>
+      <br>
+      <button name="refresh" onclick="javascript:parent.dummy('xxx')">Refresh</button>
+      <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p><br>
+If you have a scan file called "2.out.xml" SrcRpt will load it;
+otherwise you will see a message: "Use the File-&gt;Open... menu to
+select a SrcRpt XML file". Use the File menu to load a SrcRpt XML file.
+</p>
+The "Headers" report will be displayed when the SrcRpt XML file has
+loaded.&nbsp; Look at it first to see who
+scanned the file and on what machine, what keyphrases were used, what
+files were not scanned, etc.
+
+<br><br>
+The File Menu will allow you to open and save SrcRpt XML files.  Files must be saved to retain
+<a href="#analyze">Analysis results</a>.
+<br><br>
+The View Menu contains buttons to toggle the display of old-distribution hits in <a href="#diff">diff scans</a>
+and "done" hits in the <a href="#rightclick">Single Keyword with Hits Report</a>, as well as a Refresh button.
+<br><br>
+<p>Click on "Keywords" and take it from there. When you
+get to the <a href="#typical">All Keywords screen that looks something like what you see below</a>, don't
+forget to click on the pseudo-keywords "email" and "URL".
+<br>
+
+
+<br>
+"Keywords and Distinct Lines Matched" is a long
+(and slow) report that combines all the reports of "Keywords".
+<br>
+<br>
+<b>To go back to a previous report use
+the "Prev" button you will see on the page.</b> <br>
+<br>
+<b>To
+save a report push the "Save" button. The report will be
+saved to a local HTML file. </b><br>
+<br>
+The "Files" button is not very useful. Sometimes with smaller scans 
+or diff scans it is helpful to save the "Files" report
+for occasional reference in a separate window.<br>
+<br>
+<h3><a name="opening"></a>
+<b>When Source Code is Present In the Scan Directory...</b></h3>
+<p>If you want to see the contents of a file, click on the filename.
+The file will open in
+Internet Explorer and scroll to the line of interest with the keyword
+and some surrounding context highlighted. <i>Warning: some files in
+the distribution may not display correctly using Internet Explorer;</i>
+in that case you will have to use another program (Wordpad) to open
+that file. Keyword and context highlighting sometimes fails,
+particularly in HTML files.
+</p>
+<p><br>
+If the program is unable to find the line of interest a warning will be
+displayed. Use the control-f find function in the source window to find
+the keyword, or right-click in the source window to view and search in
+the source code. <br>
+<br>
+<h3><a name="typical"></a><b>Below
+is a typical Keywords report</b></h3>
+<p><a href="#table">Top</a></p>
+<br>
+<TABLE border="1">
+		<tr><th>Keyword</th><th>ULs</th><th>Hits</th></tr>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('0')">author[eds]{0,2}</a></TD>
+			<td width="25%">85</td>
+			<td width="25%">1579</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('1')">based[\-\s\*\#\n\r\/]{1,8}(?:up)?on</a></TD>
+			<td width="25%">52</td>
+			<td width="25%">73</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('2')">[\s\r\n,]\xA9[\s\r\n,]|\(c\)|\x26\#169\;|\x26copy\x3B</a></TD>
+			<td width="25%">83</td>
+			<td width="25%">1233</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('3')">Caldera</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('4')">confidential</a></TD>
+			<td width="25%">4</td>
+			<td width="25%">1073</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('5')">copie!</a></TD>
+			<td width="25%">165</td>
+			<td width="25%">294</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('6')">copyright(?!.{1,48}yoyodyne|.{1,48}international)</a></TD>
+			<td width="25%">18</td>
+			<td width="25%">1100</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('7')">FSF</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('8')">freeware</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('9')">GNU</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('10')">General Public License</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('11')">GPL</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('12')">LGPL</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('13')">(?:re)?licen[cs]e.{0,8}?</a></TD>
+			<td width="25%">47</td>
+			<td width="25%">118</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('14')">Microsoft</a></TD>
+			<td width="25%">79</td>
+			<td width="25%">480</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('15')">MPL</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('16')">mozilla</a></TD>
+			<td width="25%">1</td>
+			<td width="25%">1</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('17')">netscape</a></TD>
+			<td width="25%">5</td>
+			<td width="25%">5</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('18')">open source</a></TD>
+			<td width="25%">1</td>
+			<td width="25%">1</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('19')">patent</a></TD>
+			<td width="25%">12</td>
+			<td width="25%">12</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('20')">proprietary</a></TD>
+			<td width="25%">1</td>
+			<td width="25%">1</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('21')">public domain</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('22')">Santa Cruz</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('23')">SCO</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('24')">secret!</a></TD>
+			<td width="25%">6</td>
+			<td width="25%">1075</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('25')">shareware</a></TD>
+			<td width="25%">0</td>
+			<td width="25%">0</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('26')">email</a></TD>
+			<td width="25%">132</td>
+			<td width="25%">486</td>
+		</TR>
+		<TR>
+			<TD align="left" width="50%"><a href="javascript:parent.keywordhits('27')">URL</a></TD>
+			<td width="25%">46</td>
+			<td width="25%">288</td>
+		</TR>
+		<tr>
+			<td>GOG = 10.61</td>
+			<td>737</td><td>7819</td>
+		</tr>
+	</TABLE>
+
+<p><br>
+<h3><a name="uniqline"></a>The Uniqline</h3><br>
+
+The central metaphor of SrcRpt is the Uniqline - probably better called "unique context": 
+a block of source code that can occur more than once in a group of files being scanned.  SrcRpt
+assumes that a Uniqline has to be marked as "Done" or "Active" only once; that it has to be analyzed only
+once, and that the analysis on a Uniqline, once done, apples to the entire body of code being analyzed.
+From this assumption derives the advantage of SrcRpt over a file-by-file analysis.  Once a Uniqline is analyzed, it is 
+analyzed everywhere.
+<br>
+<br>
+
+In the Keywords report (The "ULs" and "Tot" columns display the
+number of distinct or Unique lines associated with each keyword, and
+the total number of such Uniqlines in the code scanned).&nbsp; In
+the SrcRpt analyzer (but not in the  example table above) clicking on a keyword
+in the left hand column will open a report on unique lines containing
+that keyword.<b><br>
+</b>
+<p>Gain over grep (GOG) represents the gain achieved by using SrcRpt compared to a file-by-file listing of the hits in each file. In the above example the average Uniqline appears 10.61 times in the source code being scanned. Hopefully each uniqline has to be checked off or marked as done only once. In a file by file approach the uniqline would have to be checked off in each file, more than ten times.
+<br>
+
+<h3><a name="rightclick"></a>Right-clicking
+on a keyword or hit to mark it.</h3>
+<a href="#table">Top</a>
+<p><br>
+By selecting a keyword (in this case the keyphrase <b>"all rights reserved"</b> has previously been selected from  a table similar to the one above) a report containing all hits or "unique lines" containing that keyword is displayed. 
+<br><br>
+<DIV id="nukeKeyMenuDiv" style="DISPLAY: none"><TABLE style="BORDER: none; FONT: smaller sans-serif;Z-INDEX: 3; BACKGROUND: #d0d0c8; LEFT: 0px; POSITION: absolute; TOP: 0px; HEIGHT: 100px"><TR><TD style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0">
+<INPUT type="radio" name="keyrad" checked="true">Default</INPUT>
+<INPUT type="radio" name="keyrad" >Active-all</INPUT>
+<INPUT type="radio" name="keyrad" >Done-all</INPUT></TD></TR><TR><TD style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0">
+<INPUT type="radio" name="keyrad" >Active-insert</INPUT>
+<INPUT type="radio" name="keyrad" >Done-insert</INPUT></TD></TR>
+	<TR><TD align="center" style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" >
+		<BUTTON name="annotate"  >Annotate</BUTTON>		
+	</TD></TR>
+</TABLE>
+</DIV>
+
+<DIV id="nukeULMenuDiv" style="DISPLAY: none"><TABLE style="BORDER: none; FONT: smaller sans-serif;Z-INDEX: 3; BACKGROUND: #d0d0c8; LEFT: 0px; POSITION: absolute; TOP: 0px; HEIGHT: 100px"><TR><TD id="nukeKey" style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0">
+<INPUT type="radio" name="keyrad" checked="true" >Default</INPUT>
+<INPUT type="radio" name="keyrad" >Active</INPUT>
+<INPUT type="radio" name="keyrad" >Done</INPUT></TD></TR>
+	<TR><TD align="center" style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" >
+		<BUTTON name="annotate"  >Annotate</BUTTON>		
+	</TD></TR>
+
+</TABLE>
+</DIV>
+
+
+<TABLE border="1" id="keywordTable" cellspacing="0"><TR><TH oncontextmenu="parent.nukem('keywordTable','keywordTable')">all rights reserved</TH><TH>Qty</TH><TH>Go</TH></TR>
+
+<TR style="FONT: " id="386"><td style="background-color:" ulid="386" id="UL_" oncontextmenu="parent.nukem('UL_386','nukeUL')">* Copyright (c) 2001 The Apache Software Foundation.  <font color="red">All</font> rights
+ * reserved.
+ *</td><TD align="right" style="background-color:">2</TD><TD align="right" style="background-color:">hits </TD></TR>
+
+<TR style="FONT: " id="11"><td style="background-color:" ulid="11" id="UL_" oncontextmenu="parent.nukem('UL_11','nukeUL')">Copyright (c) 2001-2004 The Apache Software Foundation.  <font color="red">All</font> rights reserved.</td><TD align="right" style="background-color:">1</TD><TD align="right" style="background-color:">hits </TD></TR>
+
+<TR style="FONT: " id="26"><td style="background-color:" ulid="26" id="UL_" oncontextmenu="parent.nukem('UL_26','nukeUL')">bottom="Copyright &amp;copy; ${year} Apache Software Foundation.  <font color="red">All</font> Rights Reserved."</td><TD align="right" style="background-color:">1</TD><TD align="right" style="background-color:"> hits </TD></TR>
+
+</TABLE>
+<p>
+
+Right-clicking on the keyword will bring up the following menu.  <b><i>
+Try it now by right-clicking on </i>"all rights reserved"<i> in the table above.
+</i></b>
+<p>
+
+<TABLE style="BORDER: none; FONT: smaller sans-serif;Z-INDEX: 3; BACKGROUND: #d0d0c8; HEIGHT: 100px">
+<TR><TD style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0">
+<INPUT type="radio" name="keyrad" checked="true" >Default</INPUT>
+<INPUT type="radio" name="keyrad" >Active-all</INPUT>
+<INPUT type="radio" name="keyrad" >Done-all</INPUT></TD></TR><TR><TD style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0">
+<INPUT type="radio" name="keyrad" >Active-insert</INPUT>
+<INPUT type="radio" name="keyrad" >Done-insert</INPUT></TD></TR>
+	<TR><TD align="center" style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" >
+		<BUTTON name="annotate"  >Annotate</BUTTON>		
+	</TD></TR>
+</TABLE>
+<p>
+
+Right-clicking on the hit or "unique line" will bring up the following menu.  <b><i>
+Try it now by right-clicking on </i></b>"* Copyright (c) 2001 The Apache Software Foundation.  <font color="red">All</font> rights
+ * reserved.
+ *"<b><i> or another hit in the table above.
+</i></b>
+<p>
+
+<TABLE style="BORDER: none; FONT: smaller sans-serif;Z-INDEX: 3; BACKGROUND: #d0d0c8; HEIGHT: 100px"><TR><TD id="nukeKey" style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0">
+<INPUT type="radio" name="keyrad" checked="true" >Default</INPUT>
+<INPUT type="radio" name="keyrad" >Active</INPUT>
+<INPUT type="radio" name="keyrad" >Done</INPUT></TD></TR>
+	<TR><TD align="center" style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" >
+		<BUTTON name="annotate"  >Annotate</BUTTON>		
+	</TD></TR>
+
+</TABLE>
+<br>
+
+<table border="1">
+<tr><td  class="exbut"><INPUT type="radio">Default</INPUT></td><td>Change all the data in the table to an unmarked state</td></tr>
+<tr><td class="exbut"><INPUT type="radio">Active-all</INPUT></td><td>Mark all the data "active"</td></tr>
+<tr><td class="exbut"><INPUT type="radio">Done-all</INPUT></td><td>Mark all the data "done"</td></tr>
+<tr><td class="exbut"><INPUT type="radio">Active-insert</INPUT></td><td>Mark all the data "active" except that marked as "done"</td></tr>
+<tr><td class="exbut"><INPUT type="radio">Done-insert</INPUT></td><td>Mark all the data "done" except that marked as "active"</td></tr></table>
+<br>
+<br>
+<table border="1">
+<tr><td class="exbut"><INPUT type="radio">Default</INPUT></td><td>Change a single hit to the unmarked state</td></tr>
+<tr><td class="exbut"><INPUT type="radio">Active</INPUT></td><td>Mark it "active"</td></tr>
+<tr><td class="exbut"><INPUT type="radio">Done</INPUT></td><td>Mark it "done"</td>
+</tr></table>
+<br>
+<br>
+Below is the <b>all rights reserved</b> table after having one hit marked as "active" and one as "done".
+<br><br>
+<TABLE border="1" id="keywordTable" cellspacing="0">
+<TR>
+<TH oncontextmenu="parent.nukem('keywordTable','keywordTable')">all rights reserved</TH><TH>Qty</TH><TH>Go</TH></TR>
+<TR style="FONT: larger sans-serif" id="386"><td style="background-color:" ulid="386" id="UL_386" oncontextmenu="parent.nukem('UL_386','nukeUL')">* Copyright (c) 2001 The Apache Software Foundation.  <font color="red">All</font> rights * reserved. *</td><TD align="right" style="background-color:#FF4040">2</TD><TD align="right" style="background-color:#FF4040">hits</TD></TR>
+ <TR style="FONT: xx-small sans-serif" id="11"><td style="background-color:" ulid="11" id="UL_11" oncontextmenu="parent.nukem('UL_11','nukeUL')">Copyright (c) 2001-2004 The Apache Software Foundation.  <font color="red">All</font> rights reserved.</td><TD align="right" style="background-color:#40FF40">1</TD><TD align="right" style="background-color:#40FF40">hits</TD></TR>
+ <TR style="FONT: " id="26"><td style="background-color:" ulid="26" id="UL_26" oncontextmenu="parent.nukem('UL_26','nukeUL')">bottom="Copyright &amp;copy; ${year} Apache Software Foundation.  <font color="red">All</font> Rights Reserved."</td><TD align="right" style="background-color:">1</TD><TD align="right" style="background-color:">hits</TD></TR>
+ </TABLE>
+<br>
+Left-clicking on the Annotate button in either of the above pop-ups will invoke the Annotation pop-up, 
+which will allow a note to be attached to a hit or table of hits:
+<p>
+<table class="x2controls" >
+  <tr height="30px"><th width="600px" style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0">
+  Add, Edit or Delete a Note</th>
+  </tr>
+  <tr height="30px"><td style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" >
+  	<select style="width: 680px" name="noteSelect">
+  		<option>None</option>
+
+	</select>
+	</td>
+	</tr>
+	<tr height="30px">
+	<td>
+	<input size="100" id="noteTextId" name="noteText" value="None" type="text"></input>
+	<button id="delButton">Del</button>
+	</td>	
+	</tr>
+  <tr height="30px"><td><input class="x2controls" type="submit" value="Submit Note"></input></td></tr>
+</table>
+
+<br><br>
+<a name="nukefil"><h3>Marking all the hits in a file as "Done" (green)</h3></a><p>
+
+Two reports in SrcRpt show the name of a file:  the Uniqline report (showing all the file names containing a given Unmiqline) 
+and the Files report (showing all the files that have been scanned).  Sometimes a single file, perhaps a license or notices file, 
+will contain a large number of Uniqlines, all of which can be assumed to not be of interest.  It is possible to mark all the 
+Uniqlines in a file as done (green) everywhere in the scan by right-clicking on the file name.
+
+
+</p>
+<p></p>
+<p>Right-clicking on a file name will bring up a dialog box similar to the following, with a warning that before setting all the Uniqlines to done the user had better be sure that the file has been completely analyzed.</p>
+<p></p>
+<TABLE
+	style="BORDER: none; FONT: smaller sans-serif;Z-INDEX: 3; BACKGROUND: #d0d0c8;"
+	width="400 border=" 1px" align="center">
+	<TR>
+		<TD style="BORDER: black 1px solid;" width="583">Set all UL's
+		from velocity-1.4/xdocs/code-standards.xml to Done? Warning: the
+		assumption is that velocity-1.4/xdocs/code-standards.xml has been
+		completely analyzed and no Ul's in it are of further interest in
+		Z:/OpenSource/velocity/1.5authors_in_1.4.xml.</TD>
+	</TR>
+	<TR>
+		<TD width="583" height="59">
+		<button onclick="">Yes</button>
+		<button onclick="">No</button>
+		</TD>
+	</TR>
+</TABLE>
+
+
+
+<br>
+<h3><a name="analyze"></a><br>
+<b>The Analyze button and Analysis report</b></h3>
+<a href="#table">Top</a><p>
+<br><br>
+When keyword tables or individual hits have been marked as "active" or "done" the overall Analyzed 
+state of the scan may be viewed via the Analysis button in the Analysis report, which shows 
+the percentage of each keyword that has been marked and the numbers of hits marked as "active", 
+as well as any notes that have been attached to keywords or hits:
+<br>
+<TABLE width="800" border="1" cellspacing="0">
+		<tr><th width="700">Keyword</th><th width="10">Uniqls</th><th width="10">Active</th><th width="10" style="FONT:smaller">Analyzed</th><th width="10">%</th></tr>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('0')">author[eds]{0,2}</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#FFD0D0"></TD>
+					</TR>
+					<TR><TD>{\*\generator Microsoft Word 10.0.5522;}{\info{\title cia}{\author A_USER}{\operator Bard}{\creatim\yr2005\mo8\dy2\hr9\min38}{\revtim\yr2005\mo9\dy1\hr11\min14}{\ver<p></p>
+							<FONT style="background-color:#FFD0D0">Apache code in com/yoyodyne/utils/text/StringInputStream.java</FONT>
+						</TD></TR>
+				</TABLE>
+			</TD>
+			<td>85</td>
+			<td style="background-color:#FFD0D0">1</td>
+			<td>85</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('1')">based[\-\s\*\#\n\r\/]{1,8}(?:up)?on</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#FFD0D0"></TD>
+					</TR>
+					<TR><TD>* Based on org.eclipse.ui.actions.DeleteResourceAction.<p></p>
+							<FONT style="background-color:#FFD0D0">Eclipse-derived code in com/yoyodyne/views/viewpoint/actions/DeleteAction.java</FONT>
+						</TD></TR>
+					<TR><TD>Operational Modeling is based on the ADS Operational Model Notation Version 2.0<p></p>
+							<FONT style="background-color:#FFD0D0">code based on external standard "Conceptual Operational Modeling is based on the ADS Operational Model Notation Version 2.0 which can be found at this url:   http://www.yoyodyne.com/services/bcs/competency/programs/km/standards/index.html"</FONT>
+						</TD></TR>
+				</TABLE>
+			</TD>
+			<td>52</td>
+			<td style="background-color:#FFD0D0">2</td>
+			<td>52</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('2')">[\s\r\n,]\xA9[\s\r\n,]|\(c\)|\x26\#169\;|\x26copy\x3B</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#FFD0D0"></TD>
+					</TR>
+					<TR><TD>* Copyright (c) 2000, 2003 IBM Corporation and others.<p></p>
+							<FONT style="background-color:#FFD0D0">Eclipse code 65 files in diagram and impl</FONT>
+						</TD></TR>
+					<TR><TD>* Copyright (c) 2000, 2004 IBM Corporation and others.<p></p>
+							<FONT style="background-color:#FFD0D0">Eclipse code in 4 files: diagram/edit and diagram/figures</FONT>
+						</TD></TR>
+					<TR><TD>Copyright (c) 1998-2002 W3C (MIT, INRIA, Keio),<p></p>
+							<FONT style="background-color:#D0FFD0">3 W3C XHTML dtd's in metadata/schemas</FONT>
+						</TD></TR>
+					<TR><TD>&lt;!-- Portions (C) International Organization for Standardization 1986:<p></p>
+							<FONT style="background-color:#FFD0D0">2 ISO character entity files in metadata/schemas</FONT>
+						</TD></TR>
+					<TR><TD>* Copyright (c) 2002 The Apache Software Foundation.  All rights<p></p>
+							<FONT style="background-color:#FFD0D0">Apache ant file: utils/text/StringInputStream.java</FONT>
+						</TD></TR>
+				</TABLE>
+			</TD>
+			<td>83</td>
+			<td style="background-color:#FFD0D0">4</td>
+			<td>83</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('3')">Caldera</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('4')">confidential</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#D0FFD0">Yoyodyne confidential copyright statement in 1073 files</TD>
+					</TR>
+				</TABLE>
+			</TD>
+			<td>4</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>4</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('5')">copie!</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#FFD0D0"></TD>
+					</TR>
+					<TR><TD>* Copied with modifications from<p></p>
+							<FONT style="background-color:#FFD0D0">code in search/resultPage/TreeViewerNavigator.java copied from org.eclipse.search2.internal.ui.basic.views.TableViewerNavigator</FONT>
+						</TD></TR>
+					<TR><TD>* Nodes in the Model. The basic code here was copied and modified from<p></p>
+							<FONT style="background-color:#FFD0D0">code in search/ModelSearchPage copied from org.eclipse.search.internal.ui.text.TextSearchPage</FONT>
+						</TD></TR>
+					<TR><TD>// TODO keyser: following code copied from com.yoyodyne.com.utils.gui.tabletree.PropertyModelImpl<p></p>
+							<FONT style="background-color:#FFD0D0">source code of this copy  in search/resultPage/MatchTreeModel.java needs to be identified: </FONT>
+						</TD></TR>
+					<TR><TD>* Significant amounts of code were copied and modified from<p></p>
+							<FONT style="background-color:#FFD0D0">code in search/ModelSearchResultPage.java from org.eclipse.search.ui.text.AbstractTextSearchViewPage</FONT>
+						</TD></TR>
+					<TR><TD>* Copied and extracted from {@link org.eclipse.jface.wizard.WizardDialog#createPreviousAndNextButtons(org.ecl</TD></TR>
+					<TR><TD>* updates of the ModelSearchResultPage GUI. Code copied and modified from<p></p>
+							<FONT style="background-color:#FFD0D0">search/impl/ResultListener from org.eclipse.search.ui.text.AbstractTextSearchViewPage</FONT>
+						</TD></TR>
+					<TR><TD>* copied from Eclipse.<p></p>
+							<FONT style="background-color:#FFD0D0">views/viewpoint/actions/RenameAction.java</FONT>
+						</TD></TR>
+					<TR><TD>* copied code from where?<p></p>
+							<FONT style="background-color:#FFD0D0">Good question! diagram/strategy/DiagramStrategyImpl.java</FONT>
+						</TD></TR>
+					<TR><TD>* fields of ResultListener. Code copied and modified from<p></p>
+							<FONT style="background-color:#FFD0D0">org.eclipse.search.ui.text.AbstractTextSearchViewPage</FONT>
+						</TD></TR>
+					<TR><TD>* ModelSearchResultPage. Most of this code was copied from<p></p>
+							<FONT style="background-color:#FFD0D0">search/impl/QueryListener copied from org.eclipse.search.ui.text.AbstractTextSearchResult</FONT>
+						</TD></TR>
+					<TR><TD>* TODO tang: describe this class -- copied from where?<p></p>
+							<FONT style="background-color:#FFD0D0">Good question! diagram/strategy/DiagramLabel.java</FONT>
+						</TD></TR>
+					<TR><TD>* code for this mostly copied from<p></p>
+							<FONT style="background-color:#FFD0D0">dnd/ReferableTransfer copied from http://dev.eclipse.org/viewcvs/index.cgi/%7Echeckout%7E/platform-swt-home/snippits/snippet79.html</FONT>
+						</TD></TR>
+					<TR><TD>* (ca. 240 lines of code were copied from {@link org.eclipse.jface.wizard.WizardDialog})<p></p>
+							<FONT style="background-color:#FFD0D0">wizards/impl/PageBookWizard</FONT>
+						</TD></TR>
+					<TR><TD>* This class copied from the JFace implementation, and changed as follows,<p></p>
+							<FONT style="background-color:#FFD0D0">Need to identify source of copied Jface code in celleditors/impl/ComboBoxCellEditor.java</FONT>
+						</TD></TR>
+				</TABLE>
+			</TD>
+			<td>165</td>
+			<td style="background-color:#FFD0D0">14</td>
+			<td>165</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('6')">copyright(?!.{1,48}yoyodyne|.{1,48}international)</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#FFD0D0"></TD>
+					</TR>
+					<TR><TD>Copyright (c) 1998-2002 W3C (MIT, INRIA, Keio),<p></p>
+							<FONT style="background-color:#D0FFD0">3 W3C XHTML dtd's in metadata/schemas</FONT>
+						</TD></TR>
+					<TR><TD>* Copyright (c) 2002 The Apache Software Foundation.  All rights<p></p>
+							<FONT style="background-color:#FFD0D0">Apache ant file: utils/text/StringInputStream.java</FONT>
+						</TD></TR>
+				</TABLE>
+			</TD>
+			<td>18</td>
+			<td style="background-color:#FFD0D0">1</td>
+			<td>18</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('7')">FSF</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('8')">freeware</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('9')">GNU</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('10')">General Public License</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('11')">GPL</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('12')">LGPL</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('13')">(?:re)?licen[cs]e.{0,8}?</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#FFD0D0">All license references to CPL except 1 ASF</TD>
+					</TR>
+					<TR><TD>* are made available under the terms of the Common Public License v1.0<p></p>
+							<FONT style="background-color:#FFD0D0">72 files 2002-2003 Eclipse code under CPL</FONT>
+						</TD></TR>
+					<TR><TD>* The Apache Software License, Version 1.1</TD></TR>
+				</TABLE>
+			</TD>
+			<td>47</td>
+			<td style="background-color:#FFD0D0">2</td>
+			<td>47</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('14')">Microsoft</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#D0FFD0">No MS code</TD>
+					</TR>
+				</TABLE>
+			</TD>
+			<td>79</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>79</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('15')">MPL</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('16')">mozilla</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#D0FFD0">No Mozilla or MPL code</TD>
+					</TR>
+				</TABLE>
+			</TD>
+			<td>1</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>1</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('17')">netscape</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#D0FFD0">No Netscape or NPL code</TD>
+					</TR>
+				</TABLE>
+			</TD>
+			<td>5</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>5</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('18')">open source</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#D0FFD0"></TD>
+					</TR>
+					<TR><TD>Since Eclipse is open-source, and its programmers did not always go through and rationalize the exporting and access-specifiers o<p></p>
+							<FONT style="background-color:#D0FFD0">reference to Eclipse project in docs/CodeGuide/Appendix 2 - Coding Practices.rtf</FONT>
+						</TD></TR>
+				</TABLE>
+			</TD>
+			<td>1</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>1</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('19')">patent</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#D0FFD0">Patent language in CPL 1.0</TD>
+					</TR>
+				</TABLE>
+			</TD>
+			<td>12</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>12</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('20')">proprietary</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#D0FFD0"></TD>
+					</TR>
+					<TR><TD>property of a service is that it has an externalized service description. A lack of an interface (proprietary or open) that is externalized and discovered is a necessity for all services.'.asString()&amp;#13;&amp;#10;<p></p>
+							<FONT style="background-color:#D0FFD0">describing interfaces (proprietary or open)</FONT>
+						</TD></TR>
+				</TABLE>
+			</TD>
+			<td>1</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>1</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('21')">public domain</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('22')">Santa Cruz</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('23')">SCO</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('24')">secret!</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#D0FFD0">No trade secrets or strong cryptography</TD>
+					</TR>
+				</TABLE>
+			</TD>
+			<td>6</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>6</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('25')">shareware</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('26')">email</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#FFD0D0"></TD>
+					</TR>
+					<TR><TD>veronika_irvine@oti.com<p></p>
+							<FONT style="background-color:#FFD0D0">code apparently copied from org.eclipse.swt.events.TraverseListener, but reference to veronika_irvine is not clear</FONT>
+						</TD></TR>
+				</TABLE>
+			</TD>
+			<td>132</td>
+			<td style="background-color:#FFD0D0">1</td>
+			<td>132</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('27')">URL</a><TABLE border="1">
+					<TR>
+						<TD align="left" style="background-color:#D0FFD0"></TD>
+					</TR>
+					<TR><TD>http://www.xmlspy.com<p></p>
+							<FONT style="background-color:#D0FFD0">Edited by XMLSpy</FONT>
+						</TD></TR>
+					<TR><TD>http://java.sun.com/j2se/1.4.2/download.html<p></p>
+							<FONT style="background-color:#D0FFD0">instructions on downloading j2se</FONT>
+						</TD></TR>
+				</TABLE>
+			</TD>
+			<td>46</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>46</td>
+			<td align="right">100.00%</td>
+		</TR>
+	</TABLE>
+
+
+<br>
+<h3><a name="compare"></a>Compare two scans</h3>
+<p><a href="#table">Top</a></p>
+<p><b><i>Quick Start</i></b>: Try 
+<a href="#menubar">File Menu</a>
+: File-&gt;Compare. Note the &quot;Compare Only Analyzed&quot; checkbox<br><br>
+</p>
+<p><b>Script Method</b></p>
+
+<p>Performing a diff scan (<a href="#diff">see below</a>) with
+SrcRpt or CSAT has required both source code trees to be present. The
+Compare facility of SrcRpt compares the XML produced by two scans, and
+does not require source code to be present.<br>
+<br>
+Compare may be used from the File-&gt;Compare menu or from a separate
+Perl utility.<br>
+<br>
+Example: Use the command line utility to compare scans of openssl-0.9.7j
+and openssl-fips-1.1.2 , which is stated to be a FIPS 140-2 validated
+version or subset of OpenSSL. <br>
+<br>
+First do two SrcRpt scans of the two source trees (or use a previously
+available scan of one of them):<br>
+<br>
+perl source_report.pl -d openssl-0.9.7j/ -f keywords.txt -o
+openssl-0.9.7j.scan.1.xml<br>
+perl source_report.pl -d openssl-fips-1.1.2 -x Makefile -f keywords.txt
+-o openssl-fips-1.1.2.scan.1.xml<br>
+<br>
+Now pass the two xml filenames to a short script calling the new Compare
+module:<br>
+<br>
+perl -e 'use
+Compare;$x=Compare-&gt;new(&quot;openssl-0.9.7j.scan.1.xml&quot;,&quot;openssl-fips-1.1.2.scan.1.xml&quot;);$x-&gt;parse1();$x-&gt;parse2()'<br>
+<br>
+The output is a new xml file called
+&quot;openssl-0.9.7j.scan.1.compare.openssl-fips-1.1.2.scan.1.xml&quot;.
+The new xml file refers to the source code in the second distribution,
+openssl-fips-1.1.2 and has ULs marked as &quot;not Interesting&quot; if
+they appear in the first distribution, openssl-0.9.7j .<br>
+<br>
+When opened with SrcRpt, the analyze report of
+&quot;openssl-0.9.7j.scan.1.compare.openssl-fips-1.1.2.scan.1.xml&quot;
+looks like this, showing that all hits in fips-1.1.2 are also found in
+openssl-0.9.7j:<br>
+<br>
+</p>
+<TABLE width="800" border="1" cellspacing="0">
+		<tr><th width="700">Keyword</th><th width="10">Uniqls</th><th width="10">Active</th><th width="10" style="FONT:smaller">Analyzed</th><th width="10">%</th></tr>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('0')">author[eds]{0,2}</a></TD>
+			<td>46</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>46</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('1')">based[\-\s\*\#\n\r\/]{1,8}(?:up)?on</a></TD>
+			<td>76</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>76</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('2')">[\s\r\n,]\xA9[\s\r\n,]|\(c\)|\x26\#169\;|\x26copy\x3B</a></TD>
+			<td>353</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>353</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('3')">Caldera</a></TD>
+			<td>2</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>2</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('4')">confidential</a></TD>
+			<td>2</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>2</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('5')">copie!</a></TD>
+			<td>85</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>85</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('6')">copyright(?!.{1,48}yoyodyne|.{1,48}international)</a></TD>
+			<td>83</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>83</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('7')">FSF</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('8')">freeware</a></TD>
+			<td>1</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>1</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('9')">GNU</a></TD>
+			<td>87</td>
+			<td style="background-color:">0</td>
+			<td>84</td>
+			<td align="right">96.55%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('10')">General Public License</a></TD>
+			<td>1</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>1</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('11')">GPL</a></TD>
+			<td>6</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>6</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('12')">LGPL</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('13')">(?:re)?licen[cs]e.{0,8}?</a></TD>
+			<td>46</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>46</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('14')">Microsoft</a></TD>
+			<td>102</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>102</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('15')">MPL</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('16')">mozilla</a></TD>
+			<td>2</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>2</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('17')">netscape</a></TD>
+			<td>198</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>198</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('18')">open source</a></TD>
+			<td>7</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>7</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('19')">patent</a></TD>
+			<td>14</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>14</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('20')">proprietary</a></TD>
+			<td>1</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>1</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('21')">public domain</a></TD>
+			<td>4</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>4</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('22')">Santa Cruz</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('23')">SCO</a></TD>
+			<td>12</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>12</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('24')">secret!</a></TD>
+			<td>72</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>72</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('25')">shareware</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('26')">email</a></TD>
+			<td>370</td>
+			<td style="background-color:">0</td>
+			<td>366</td>
+			<td align="right">98.92%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('27')">URL</a></TD>
+			<td>99</td>
+			<td style="background-color:">0</td>
+			<td>96</td>
+			<td align="right">96.97%</td>
+		</TR>
+	</TABLE><br>
+<br>
+<br>
+<b>Menu Method</b>
+<br>
+<br>
+Extended Compare functionality is available from the
+<a href="#menubar">File Menu</a>
+: File-&gt;Compare.
+You may try this now. Allow the blocked content to see the demonstration. Notice that File-&gt;Compare has a checkbox, &quot;Compare Only Analyzed&quot;, that File-&gt;Open does not have.
+<i><b>Checking the box indicates that only the Uniqlines that have
+been analyzed will be compared.</b></i>
+Left unchecked, all Uniqlines in the comparison document will be set to &quot;done&quot; in the current document.
+
+<br>
+<p>Accept or reject the dialog similar to the following to perform the comparison:</p>
+<TABLE 	style="BORDER: none; FONT: smaller sans-serif;Z-INDEX: 3; BACKGROUND: #d0d0c8;"
+	width="400 border=" 1px" align="center">
+<TR>
+<TD style="BORDER: black 1px solid;">Set 849 UL's from comparisonexample.xml to done? 
+Warning:  the assumption is that documentunderanalysis.xml has been analyzed and no Ul's in it need further analysis in 'comparisonexample.xml'.
+</TD>
+</TR>
+<TR>
+<TD><button onclick="javascript:parent.">Yes</button><button onclick="javascript:parent." >No</button>
+</TD>
+</TR> 
+</TABLE>
+
+<br>
+<br>Following are before and after examples. First a scan was done of XML4C version 3.5.2. Then, since XML4C version 5.4.0 had already been copmpletely analyzed and all hits in v. 5.4.0 satisfactorily explained, the
+<br>
+File-&gt;Compare menu was used (without the &quot;Compare Only Analyzed&quot; box checked). Compare the earlier scan of v. 5.4.0 to v. 3.5.2, with the following results:
+<br>
+<h2 align="center"></h2>
+<p align="center"><b><font size="+2">File Menu Compare Example</font></b></p>
+<h2 align="left">Before</h2>
+<TABLE width="800" border="1" cellspacing="0">
+                <tr><th width="700">Keyword</th><th width="10">Uniqls</th><th width="10">Active</th><th width="10" style="FONT:smaller">Analyzed</th><th width="10">%</th></tr>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('0')">author[eds]{0,2}</a></TD>
+                        <td>6</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('1')">based[\-\s\*\#\n\r\/]{1,8}(?:up)?on</a></TD>
+                        <td>34</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('2')">[\s\r\n,]\xA9[\s\r\n,]|\(c\)|\x26\#169\;|\x26copy\x3B</a></TD>
+                        <td>22</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('3')">Caldera</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('4')">confidential</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('5')">copie!</a></TD>
+                        <td>26</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('6')">copyright(?!.{1,48}yoyodyne|.{1,48}international)</a></TD>
+                        <td>36</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('7')">FSF</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('8')">freeware</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('9')">GNU</a></TD>
+                        <td>49</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('10')">General Public License</a></TD>
+                        <td>6</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('11')">GPL</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('12')">LGPL</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('13')">(?:re)?licen[cs]e.{0,8}?</a></TD>
+                        <td>14</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('14')">Microsoft</a></TD>
+                        <td>14</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('15')">MPL</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('16')">mozilla</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('17')">netscape</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('18')">open source</a></TD>
+                        <td>1</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('19')">patent</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('20')">proprietary</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('21')">public domain</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('22')">Santa Cruz</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('23')">SCO</a></TD>
+                        <td>10</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('24')">secret!</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('25')">shareware</a></TD>
+                        <td>0</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">
+                        </td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('26')">email</a></TD>
+                        <td>32</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+                <TR>
+                        <TD align="left"><a href="javascript:parent.keywordhits('27')">URL</a></TD>
+                        <td>31</td>
+                        <td style="background-color:">0</td>
+                        <td>0</td>
+                        <td align="right">.00%</td>
+                </TR>
+        </TABLE>
+<br>
+<p><br></p>
+<h2 align="left">After</h2>
+<TABLE width="800" border="1" cellspacing="0">
+		<tr><th width="700">Keyword</th><th width="10">Uniqls</th><th width="10">Active</th><th width="10" style="FONT:smaller">Analyzed</th><th width="10">%</th></tr>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('0')">author[eds]{0,2}</a></TD>
+			<td>6</td>
+			<td style="background-color:">0</td>
+			<td>5</td>
+			<td align="right">83.33%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('1')">based[\-\s\*\#\n\r\/]{1,8}(?:up)?on</a></TD>
+			<td>34</td>
+			<td style="background-color:">0</td>
+			<td>32</td>
+			<td align="right">94.12%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('2')">[\s\r\n,]\xA9[\s\r\n,]|\(c\)|\x26\#169\;|\x26copy\x3B</a></TD>
+			<td>22</td>
+			<td style="background-color:">0</td>
+			<td>20</td>
+			<td align="right">90.91%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('3')">Caldera</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('4')">confidential</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('5')">copie!</a></TD>
+			<td>26</td>
+			<td style="background-color:">0</td>
+			<td>24</td>
+			<td align="right">92.31%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('6')">copyright(?!.{1,48}yoyodyne|.{1,48}international)</a></TD>
+			<td>36</td>
+			<td style="background-color:">0</td>
+			<td>33</td>
+			<td align="right">91.67%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('7')">FSF</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('8')">freeware</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('9')">GNU</a></TD>
+			<td>49</td>
+			<td style="background-color:">0</td>
+			<td>24</td>
+			<td align="right">48.98%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('10')">General Public License</a></TD>
+			<td>6</td>
+			<td style="background-color:#D0FFD0">0</td>
+			<td>6</td>
+			<td align="right">100.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('11')">GPL</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('12')">LGPL</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('13')">(?:re)?licen[cs]e.{0,8}?</a></TD>
+			<td>14</td>
+			<td style="background-color:">0</td>
+			<td>12</td>
+			<td align="right">85.71%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('14')">Microsoft</a></TD>
+			<td>14</td>
+			<td style="background-color:">0</td>
+			<td>13</td>
+			<td align="right">92.86%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('15')">MPL</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('16')">mozilla</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('17')">netscape</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('18')">open source</a></TD>
+			<td>1</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('19')">patent</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('20')">proprietary</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('21')">public domain</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('22')">Santa Cruz</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('23')">SCO</a></TD>
+			<td>10</td>
+			<td style="background-color:">0</td>
+			<td>9</td>
+			<td align="right">90.00%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('24')">secret!</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('25')">shareware</a></TD>
+			<td>0</td>
+			<td style="background-color:">0</td>
+			<td>0</td>
+			<td align="right">
+			</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('26')">email</a></TD>
+			<td>32</td>
+			<td style="background-color:">0</td>
+			<td>26</td>
+			<td align="right">81.25%</td>
+		</TR>
+		<TR>
+			<TD align="left"><a href="javascript:parent.keywordhits('27')">URL</a></TD>
+			<td>31</td>
+			<td style="background-color:">0</td>
+			<td>24</td>
+			<td align="right">77.42%</td>
+		</TR>
+	</TABLE>
+	<br>
+<br>
+<a name="diff"></a><br>
+
+<h3>Diff Scans</h3>
+<a href="#table">Top</a><br>
+<br>
+The following color scheme is used in the unique-line reports and the
+file reports:
+<p>
+<table border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td>Distribution 1</td>
+      <td style="background-color: rgb(128, 255, 255);" width="40"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>Distribution 2</td>
+      <td style="background-color: rgb(255, 128, 255);" width="40"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>Both Distributions</td>
+      <td style="background-color: rgb(128, 128, 128);" width="40"><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<br>
+In the <span style="font-weight: bold;">unique line</span> reports <font
+ style="background-color: rgb(128, 255, 255);">Distribution 1 color</font>
+or <font style="background-color: rgb(255, 128, 255);">Distribution 2
+color</font> means that the <span style="font-weight: bold;">unique
+line</span> is present and has changed (been removed or added) only
+in that distribution. The <font style="background-color: rgb(128, 128, 128);">Both Distributions color</font>
+indicates that a unique line has changed in at least one file in both
+distributions. Usually the <font style="background-color: rgb(128, 128, 128);">Both Distributions color</font>
+means that a file has been moved from one directory to another between distributions.
+<br><br>
+<font style="background-color: rgb(128, 255, 255);">Distribution 1 color</font> hits may be
+turned off or rendered invisible from the View menu.  They are still there, however, and 
+their state will influence the <a href="#analyze">Analysis report</a>.
+<br>
+<br>
+In the <span style="font-weight: bold;">file</span> oriented reports
+the colors indicate that a <span style="font-weight: bold;">file</span>
+is found <i>only</i>
+in one or the other distribution. No color indicates that a file of a
+given name and path is present in both distributions<br>
+<br>
+The directory structure of the two distributions must be identical, or
+nearly so, for the diff scan to be useful. Ideally the directory
+structure should differ only in the top-level directory names, e. g.,
+"lucene-1.3-final" vs. "lucene-1.4-final".
+<a name="scanning">
+<hr>
+<hr></a><p>
+<p><h3>SCAN PHASE</h3><a
+ href="#table">Top</a><p>
+<p><br>
+<br>
+<a name="requirements"></a>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp; <a
+ href="#table">Top</a></p>
+Perl 5.6 or greater must be installed. Perl 5.8+ is highly
+recommended. SrcRpt will scan under Windows, Linux or Unix.
+Iseries and z/OS code has also been scanned. Unzip the SrcRpt
+distribution into a folder immediately above the folder containing the
+source to be scanned. <br>
+<a name="usage"></a><br>
+<span style="font-weight: bold;">Usage:&nbsp;</span>&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp; <a
+ href="#table">Top</a><br>
+<br>
+<br>
+<code>
+perl source_report.pl -h <br>
+perl source_report.pl -r -d &lt;search dir&gt; [ -o &lt;output file&gt;  ]<br>
+perl source_report.pl -f &lt;keyword file&gt; -d &lt;search dir&gt; [ -o &lt;output file&gt; ]<br>
+perl source_report.pl -f &lt;keyword file&gt; -d &lt;search dir&gt; -c &lt;diff dir&gt; [ -o &lt;output file&gt; ]<br>
+<br>
+In addition the following options may be used:
+<br>
+<br>
+[ -n ]  [ -x &lt;exclude suffix&gt;][,... ] [ -X &lt;exclude prefix&gt;][,... ] [ -y &lt;exclude directory&gt;][,... ] [ -t &lt;number of trailing characters&gt; ] [ -q ]
+<br><br>
+Where -n turns off the pseudo-keywords "URL" and "email", -x and -X are used to exclude filenames matching
+the specified suffixes and prefixes, -y excludes any directory of the specified name (and all subdirectories)
+and -t specifies the number of trailing characters to include by default after a keyphrase expression match. 
+<br><br>
+With "-r" (the Copyright Holder report), "-n" is set by default, turning off the pseudo-keywords "URL" and "email".
+<br>
+<br>
+ The -q option allows the creation of a scan directory, with or without chunked files, for compression and transmission.<br>
+<br>
+In the following example, a keywords file "keywords_2004_03_29.txt" will be
+used to scan all non-binary files in a source tree beginning at 
+directory lucene-1.3-final  with XML output. The output file will
+be named (in the absence of the -o switch) "2.out.xml".
+<br><br>
+<b style="font-size: larger">perl source_report.pl -f keywords_2004_03_29.txt -d lucene-1.3-final  </b>
+<br><br>
+In this example a report on the diffs between two Perl versions is produced:
+<br><br>
+<b style="font-size: larger">perl source_report.pl -f keywords.txt -d perl-5.8.3 -c perl-5.8.6 -o 2.out.perl5.8.3.perl5.8.6.diff.2.xml</b>
+<br><br>
+In the following example using the keywords file "keywords_2005_07_28.txt", 
+a diff scan between two versions of Jakarta log4j is produced ignoring xml and html files:
+<br><br>
+<b style="font-size: larger">perl source_report.pl -f keywords_2005_07_28.txt -d jakarta-log4j-1.1.1 -c jakarta-log4j-1.1.3 -x xml,html -o log4j-1.1.1.diff.1.1.3.srcrpt.2.xml</b>
+<br><br>
+This example forces 80 characters of context after every keyphrase hit and excludes all files beginning with "Change"
+as well as all directores named "doc".
+<br><br>
+<b style="font-size: larger">perl source_report.pl -d TimeDate-1.16 -f keywords_2005_07_28.txt -t 80 -o TimeDate-1.16.srcrpt.5.xml -X Change -y doc</b>
+<br><br>
+Here the copyright scan is run on a directory called "build.buildforge.1", excluding filenames with certain prefixes and suffixes:
+<br><br>
+<b style="font-size: larger">perl source_report.pl -r  -d build.buildforge.1 -X Makefile -x phpt,.mk,makefile,.sh,ignore,.in -o php.build.buildforge.copyr.4.srcrpt.xml</b>
+</code>
+<br>
+<br>
+&nbsp;
+<a name="command"></a><br>
+<b>To scan source:</b>
+<a href="#table">Top</a><br>
+<br>
+Open a command window and
+change directory to the directory where SrcRpt has been
+unzipped. <br>
+<br>
+If the source code is found in the folder
+"lucene-1.3-final" and a keyword/keyphrase file "keywords.txt" exists
+the command line would be:
+<p style="margin-left: 0.75in; font-family: sans-serif;">perl
+source_report.pl -d
+lucene-1.3-final -f keywords.txt </p>
+<p>The order on the command line makes no difference and the switches
+are not case sensitive.
+</p>
+<p style="margin-left: 0.75in; font-family: sans-serif;">perl
+source_report.pl -F keywords.txt
+-d lucene-1.3-final</p>
+<p>is exactly equivalent to the above.</p>
+<p style="margin-left: 0.75in; font-family: sans-serif;">perl
+source_report.pl -f keywords.txt
+-d lucene-1.3-final -n</p>
+<p>is equivalent to the above except reports on email addresses and
+URL's (pseudo-keywords) are not prepared.</p>
+<p>Sometimes it is useful to specify the name of the output file,
+rather that accepting the default ("2.out.xml"). A filename must end in
+*.xml:</p>
+<p style="margin-left: 0.75in; font-family: sans-serif;">perl
+source_report.pl -f keywords.txt
+-d lucene-1.3-final -o srcrpt.1.lucene1.3.xml</p>
+<p>A text file of paths to files may be used in place of a directory
+using the capital -I switch:</p>
+<p style="margin-left: 0.75in; font-family: sans-serif;">perl
+source_report.pl -I libwww579files -f keywords_2004_10_19.txt -o
+libwww5903_1.xml</p>
+<br>
+<b>Diff Scans: Reports on the differences between two versions of a
+source
+tree&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; </b><a
+ href="#table">Top</a>
+<p>In this example a report on the diffs between two Perl versions is
+produced:</p>
+<p style="margin-left: 0.75in; font-family: sans-serif;">perl
+source_report.pl -f keywords.txt -d perl-5.8.3 -c perl-5.8.6 -o
+2.out.perl5.8.3.perl5.8.6.diff.2.xml</p>
+<p>When scanning the diffs between two source trees, the directory
+naming conventions in both trees must be the same. For this reason,
+Eclipse project directories may not work satisfactorily with a diff
+scan. Use the CVS source instead.<br>
+</p>
+<p><span style="font-weight: bold;"><a name="copyrcommandl"></a>The 
+Copyright Holder scan&nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp; </span><a
+ href="#table">Top</a></p>
+<p>Here the copyright scan is run on a directory called
+"build.buildforge.1", excluding filenames with certain prefixes and
+suffixes:<span style="font-weight: bold;"><br>
+</span></p>
+<div style="margin-left: 80px;"><span style="font-family: sans-serif;">perl
+source_report.pl -r&nbsp; -d build.buildforge.1 -X Makefile -x
+phpt,.mk,makefile,.sh,ignore,.in -o
+php.build.buildforge.copyr.4.srcrpt.xml</span><br>
+</div>
+<hr>
+<p><b><a name="chunking"></a>Chunking</b><span style="font-weight: bold;">&nbsp;&nbsp; <span
+	style="font-weight: bold;">&nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; </span><a
+	href="#table">Top</a>
+</span><a
+	href="#table"></a>
+</p>
+
+<p>Since April, 2007, in an effort to speed up pre-acquisition legal
+Due Diligence, so-called &quot;chunking&quot;, combined with
+&quot;shadowing&quot; has been a part of SrcRpt. Following is a brief
+description of the purpose of &quot;chunked&quot; scanning:<br>
+<br>
+The problem: The acquisition target will not let the code to be scanned
+leave the premises, but the attorneys need to see and analyze the
+code scan. <br>
+<br>
+Earlier solutions: <i>1.</i> Have the attorney or other qualified representative travel to the premises to analyze the scan. <i>2.</i>
+Have the target send the source code to us.<br>
+<br>
+The problem with the earlier solutions: <i>1</i>. Even if the lawyer or
+a qualified representative is able to travel go the premises, he/she
+doesn't have enough time/facilities to analyze the scan. <i>2</i>.
+Difficult or impossible to get the target to send us the code before we
+have acquired it.<br>
+<br>
+The solution: Create a &quot;shadowed&quot;, &quot;chunked&quot; file
+system, in which all the directory names and file names are the same
+(&quot;shadowed&quot;), but the files are truncated
+(&quot;chunked&quot;). A variable amount of context is created around
+each hit in the scan (a variable amount negotiated with the target) and
+that amount only is written to the output file. Then the shadow file
+system is returned to the lawyer or other expert so that he/she can
+drill down from the scan into the source code as needed. The chunked
+files don't have enough technical information to compromise the
+intellectual property of the target, but they do have enough information
+to allow provenance/pedigree to be established.<br>
+<br>
+The negotiation with the target over the amount of leading and trailing
+context around each hit is straightforward, once the target can see a
+few examples.<br>
+</p>
+
+<p>Chunking is accomplished using the -q switch and following the prompts at scan-time, or after the scan with the create_scan_dir.pl utility.</p>
+<p>With either the -q option or the  create_scan_dir.pl utility the user will see a series of prompts as follows:</p><p><b>Creating
+scan directory...Do you wish to create chunked files in the scan
+directory? [y] or [n] y</b></p>
+<p><b>Creating chunked files in scan directory:</b></p>
+<p><b>Enter the number of characters to be included before and after
+each hit in a chunk, or press &lt;Enter&gt; to accept the default of 500
+characters. </b></p>
+<p><b>250 </b></p>
+<p><b>Including 250 characters before and after each hit in a chunk.
+If this is correct enter [y] </b></p>
+<p><b>y </b></p>
+<p><b>Chunking 250 characters</b></p>
+<p><b>...</b></p>
+<p><br>
+</p>
+<p></p>
+<hr style="width: 100%; height: 2px;">
+<p><span style="font-weight: bold;"><a name="keywords"></a>The
+keyword/keyphrase file&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; </span><a
+ href="#table">Top</a>
+</p>
+<p>The keyword file consists of one case insensitive keyword, key
+phrase or regular expression per line.&nbsp; Comments begin with the
+character "#".<br>
+</p>
+<p>A keyphrase may be delimited by spaces or tabs.<br>
+</p>
+<p>Regular expressions are Perl 5 compatible and are indicated by "QQ"
+separated by a space at the beginning or end of a line..<br>
+</p>
+<p>&nbsp;Keywords beginning or ending with "!" will be found if they
+occur
+at the beginning or end of a word, e. g., MS! will match "MSDN" and
+"MS-DOS".<br>
+</p>
+Here are sample keywords/keyphrases, with
+comments
+and
+suggestions for changes depending on circumstances. (The Priority
+Column gives suggestions for which keywords to eliminate first under
+pressing circumstances.&nbsp; These suggestions should be cleared with
+your lawyer.)<br>
+<br>
+<table border="1">
+  <tbody>
+    <tr>
+      <th>Keywords</th>
+      <td style="vertical-align: top;"><span style="font-weight: bold;">Priority</span><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-weight: bold;">Note</span><br>
+      </td>
+    </tr>
+    <tr>
+      <td>author[eds]{0,2} QQ</td>
+      <td style="vertical-align: top;">2<br>
+      </td>
+      <td style="vertical-align: top;">Will pick up "authored",
+"authors", "author".&nbsp; Change to "author&quot;    if
+too much clutter<br>
+      </td>
+    </tr>
+    <tr>
+      <td>based[\-\s\*\#\n\r\/]{1,8}(?:up)?on QQ</td>
+      <td style="vertical-align: top;">2<br>
+      </td>
+      <td style="vertical-align: top;">&quot;based on&quot; or &quot;based upon&quot;<br>
+      </td>
+    </tr>
+    <tr>
+      <td>[\s\r\n,]\xA9[\s\r\n,]|\(c\)|\x26\#169\;|\x26copy\x3B QQ </td>
+      <td style="vertical-align: top;">2<br>
+      </td>
+      <td style="vertical-align: top;">The copyright symbols &copy; and &quot;(c)&quot;<br>
+      Do not use if also using Copyright Holder scan.</td>
+    </tr>
+    <tr>
+      <td>Caldera</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>confidential</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>copie!</td><td style="vertical-align: top;">2<br>
+      </td><td style="vertical-align: top;">"copies" and "copied"<br>
+      </td>
+      
+      
+    </tr>
+    <tr>
+      <td>copyright(?!.{1,48}yoyodyne|.{1,48}international) QQ</td>
+      <td style="vertical-align: top;">2<br>
+      </td>
+      <td style="vertical-align: top;">Intended to reject Yoyodyne copyright statements<br>Do not use if also using Copyright Holder scan.
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">#from<br>
+      </td>
+      <td style="vertical-align: top;">3<br>
+      </td>
+      <td style="vertical-align: top;">Not a standard keyword, so commented out, but very useful
+in smaller scans. Too much clutter when scanning large distributions<br>
+"received from" and "obtained from" also have been used<br>
+      </td>
+    </tr>
+    <tr>
+      <td>FSF</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>freeware</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>GNU</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>General Public License</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>GPL</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>LGPL</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>(?:re)?licen[cs]e.{0,8}? QQ</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;">licence, licenses, licensor, relicensed, etc.<br>
+      </td>
+    </tr>
+    <tr>
+      <td>Microsoft</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>MPL</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>mozilla</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>netscape</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>open source</td>
+      <td style="vertical-align: top;">2<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>patent</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>proprietary</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>public domain</td>
+      <td style="vertical-align: top;">2
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>Santa Cruz</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>SCO</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>secret!</td>
+      <td style="vertical-align: top;">2<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>shareware</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;"><br>
+      </td>
+    </tr>
+    <tr>
+      <td>email</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;">Pseudo keyword.&nbsp; Will catch
+all e-mail addresses.&nbsp; Suppress with -n switch to source_report.pl</td>
+    </tr>
+    <tr>
+      <td>URL</td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;">Pseudo keyword.&nbsp; Will catch
+all URL's. Suppress with -n switch to source_report.pl<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p><br>
+</p>
+<hr>
+<a name="features"></a>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; <a
+ href="#table">Top</a><br><br>
+Before the scan the combined regular
+expression for all keywords is printed. Then a brief report on the
+number of files to be scanned and those files detected as binaries
+(not to be scanned) is printed.
+<p>If a file to be scanned exceeds 20 MB in size a warning message will
+be output and the user will be asked before the scan begins if the
+large file should be scanned or not. Sometimes scanning large files
+will cause SrcRpt to run out of memory. The memory threshold may be
+changed from 20MB to any other value by setting environment variable
+SRCRPT_MAX_FILE_SIZE.</p>
+<p>During the scan a progress bar will be produced. <br>
+<br>
+A new
+file, 2.out.xml (or an arbitrary name if the -o switch is used),
+containing the XML output of the scan, will be
+written. The scan results may now be analyzed by opening "index.hta"
+by double-clicking on it.</p>
+<a name="zip"></a>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp; <a href="#table">Top</a>
+<p> The results may be zipped up for transmission to someone else.
+<br>
+<br>
+If the -q option is used at scan time a scan directory is created which contains all the necessary SrcRpt files as well as that subset of the source code containing hits. </p>
+<p>The source distribution folder and the following files are needed to read the scan: <br>
+<br>
+1.xsl <br>
+2.xsl <br>
+3.xsl <br>
+4.xsl <br>
+5.xsl <br>
+6.xsl<br>
+7.xsl<br>
+8.xsl<br>
+srcrpt.js<br>
+srcrpti.xsl<br>
+index.hta <br>
+a.html<br>
+b.html<br>
+x2.html <br>
+y.html <br>
+z4.html<br>
+folder.gif<br>
+characters.ent<br>
+2.out.xml (or other output file ending in *xml) <br>
+<br>
+<i>Don't forget to zip up the source folder, too! (unless, of
+course, it is very large, or unavailable for legal or other reason)</i></p>
+<p>
+<a name="create_scan_dir"></a><b><span style="font-style: normal;">Use
+of the </span>
+&#8220;create_scan_dir.pl&#8221; script to assist in
+zipping for transmission.&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; </b><a
+ href="#table">Top</a></p>
+<p><span style="">create_scan_dir
+has two purposes:</span></p>
+<ol>
+  <li>
+    <p><span style="">It produces a folder containing only those source
+files which contained keywords, omitting binaries and files that did
+not contain keywords. So the new folder is smaller than the old one,
+and only contains files with keywords.</span></p>
+  </li>
+  <li>
+    <p><span style="">It copies all the files necessary for someone
+else to analyze the scan, so that the resulting folder may be
+conveniently zipped.</span></p>
+  </li>
+</ol>
+<p><span style="">The command line is:
+<p style="margin-left: 0.75in; font-family: sans-serif;">perl
+create_scan_dir.pl -f &lt;file name&gt; -d &lt;folder name&gt; [ -c
+&lt;comparison folder name&gt; ]</p>
+where &lt;file name&gt; is the name of the SrcRpt XML file from the scan and &lt;folder name&gt; is the original folder scanned with the -d
+option
+to source_report.pl. For a diff scan use the -c option for the name of the comparison directory. The new folder will have a name:
+"SrcRpt.&lt;nnnn&gt;.&lt;folder name&gt; .</span></p>
+<p><span style="">Example:</span></p>
+<p style="margin-left: 0.75in; font-family: sans-serif;">
+perl create_scan_dir.pl -f lucene.1.3.1.4.diff.xml -d lucene-1.3-final
+-c lucene-1.4-final
+</p>
+<p><span style="">Where &#8220;<span style="">lucene-1.3-final&#8221; and &#8220;<span
+ style="">lucene-1.4-final&#8221;
+are the folders </span>containing the sources of a scan.</span></span></p>
+<p><span style="">A new folder
+&#8220;SrcRpt.9042.lucene-1.3-final &#8221; has been produced. This
+folder contains index.hta, the XML output of the scan, and all other
+files needed for analysis. The new folder may be zipped for
+transmission. <b>Warning</b>: <i>The source directory or directories
+created do not contain all the source code, only code that contains
+keywords.</i></span><br>
+<br>
+<br>
+</p>
+<hr>
+<hr>
+<p><i><br>
+</i></p>
+<p><i><br>
+</i></p>
+<p><i>SrcRpt v. 0.3040&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; </i><a
+ href="#table">Top</a><p>
+
+</i></p>
+<p><i>For more information contact Bill Spurlin: wj@spurlin.org </i></p>
+<p><i>Copyright (c) 2004 - 20015 IBM. All Rights Reserved<br>
+<br>
+2005-02-18; 2005-06-06; 2006-06-19; 2006-10-23; 2006-11-07; 2007-1-17, 2008-03-31, 2008-10-16, 2009-05-06<br>
+</i></p>
+</body>
+</html>

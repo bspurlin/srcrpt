@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+  <!--
+
+    Copyright ©, 2004, 2005, International Business Machines
+
+    This file is part of SrcRpt.
+  
+    SrcRpt is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, version 2.0.
+
+    SrcRpt is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SrcRpt.  If not, see http://www.gnu.org/licenses/.
+
+  -->
+
+  <!-- author wj@spurlin.org -->
+
+  <head>
+    <title>File Menu</title>
+    <style type="text/css">
+    <!--
+    .controls {
+	font-family: Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+	background-color: #EEDDDD;
+    }
+    -->
+    </style>
+    <script type="text/javascript" src="srcrpt.js"></script>
+
+    <script>
+
+
+var fso = new ActiveXObject("Scripting.FileSystemObject");
+var coa = false;
+
+function exitDialog (F,wd) {
+      if (parentWindow.compare == 1) {
+	  parentWindow.parentCompare(F, window.event.clientX, window.event.clientY, coa);
+      } else if (parentWindow.compare == 2) {
+	  parentWindow.parentRmDir(F, window.event.clientX, window.event.clientY);
+      } else {
+	  parentWindow.parentOpen(F,wd);
+      }
+      window.close();
+}
+
+
+
+function enumfolder (F) {
+    var f = fso.GetFolder(F);
+    var path = "";
+    var n = parentWindow.compare == 2 ? "Remove Dir" : "Open";; 
+    var x = parentWindow.compare == 2 ? "Directory" : "File";
+    var s = ' <FORM name=fileform onSubmit="processFilename()" METHOD="post" ENCTYPE="multipart/form-data">' + x;
+    if (parentWindow.compare != 2)	
+	s = s + ' <INPUT class="controls" id="fileinput" TYPE="file" NAME="filename">';
+    else
+	s = s + ' <INPUT class="controls" id="fileinput" TYPE="text" NAME="filename">' ; 
+    s = s + '<br><br> <INPUT class="controls" TYPE="submit" NAME="Submit" VALUE="' + n  + '"> </FORM>' + "<div><em>" + F + "</em></div>";
+    div1.innerHTML="";
+    var folders = new Enumerator(f.SubFolders);
+    var files = new Enumerator(f.files);
+    var XMLRx = /xml$/i;
+    if (f.ParentFolder) {
+	s += "<div  style=\"CURSOR: hand\" onclick=\"javascript:enumfolder(\'" +  processPath(f.ParentFolder.path) + "\')\"><img src=\"res://odbcint.dll/2/1539\"></img>..</div>\n";
+    } else {
+	//alert("Parent of " + F + "== null");
+    }
+    for (; !folders.atEnd(); folders.moveNext()) {
+	x = folders.item();
+	x = x.path;
+	n = fso.getfolder(x).Name;
+	path = processPath(x);
+	x = "<div  style=\"CURSOR: hand\" onclick=\"javascript:enumfolder(\'" + path + "\')\"><img src=\"res://mprui.dll/2/7030\"></img>" + n;
+
+	if (parentWindow.compare == 2) {
+	    x = x + " <button onclick=\"javascript:exitDialog(\'" + path.substr(CWD.length + 1) + "','" + n   + "\')\">Remove</button> ";
+	}
+	x = x +  "</div>\n";
+	s += x;
+    }
+    for (; !files.atEnd(); files.moveNext()) {
+	x = files.item();
+	x = x.path;
+	n = fso.getfile(x).Name;
+	x = processPath(x);
+	if (x.match(XMLRx)) {
+	    s += "<div  style=\"CURSOR: hand\" onclick=\"javascript:exitDialog( \'" + x  + "','" + F +"\')\">" + n + "</div>\n";
+	}
+    }
+    document.title = F;
+    div1.innerHTML = s;
+    if (parentWindow.compare == 1) {
+	div1.innerHTML = '<INPUT TYPE=checkbox id=compareonlyanalyzed onclick="javascript:coa=true"><b>Compare Only Analyzed</b></INPUT><p>' + div1.innerHTML
+    }
+    //    alert(div1.innerHTML);
+    return(0);
+}
+
+var iFiles = 0;
+
+var CWD = currdir();
+var parentWindow;
+parentWindow = dialogArguments;
+var File1 = "";
+
+function bodyonload() {
+    CWD = fileuritostring(parentWindow.parent.CWD);
+    enumfolder(CWD);
+}
+
+</script>
+</head>
+
+<body  onload=javascript:bodyonload()>
+
+
+<div id="div1"></div>
+<div id="div2" STYLE="display:none">div2</div>
+  </body>
+</html>

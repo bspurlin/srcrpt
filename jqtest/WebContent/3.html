@@ -1,0 +1,116 @@
+<html>
+
+
+  <!--
+
+    Copyright ©, 2004 - 20015, International Business Machines
+
+    This file is part of SrcRpt.
+  
+    SrcRpt is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, version 2.0.
+
+    SrcRpt is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SrcRpt.  If not, see http://www.gnu.org/licenses/.
+
+  -->
+
+  <!-- author wj@spurlin.org -->
+
+
+<head>
+
+  <style>
+    div {border: 1px solid black;}
+
+  </style>
+  <title>SrcRpt JavaScript Tests</title>
+  
+  <script>
+var xslStylesheet = document.implementation.createDocument("", "test", null);
+var xsltProcessor = new XSLTProcessor();
+var xsltParam = 0;
+var fragIndex = -1;  //Be careful, since this will be the index of an array
+var fragment = 0;
+var lastfragment=0;
+fragArray = new Array(5); //When populating an array of DocumentFragments, keep in mind
+                          //that DocumentFragments cannot be copied with the assignment
+                          //operator; use the .cloneNode() method instead. 
+
+var xmlDoc = document.implementation.createDocument("", "test", null);
+var textDoc = document.implementation.createDocument("", "test", null);
+
+function Init() {
+    ex = document.getElementById("example");    
+    ex.innerHTML="";
+    xsltProcessor.importStylesheet(xslStylesheet);
+    xsltProcessor.setParameter(null, "hitid",xsltParam);   
+    xsltParam = 0;
+    fragment = xsltProcessor.transformToFragment(xmlDoc, document);
+    fragIndex++;
+    fragArray[fragIndex] = fragment.cloneNode(true);
+    set_prev(fragIndex -1); 
+    ex.appendChild(fragment);
+    xsltProcessor.reset();  
+}
+
+xslStylesheet.addEventListener("load", Init, false);
+
+function execute(stylesheet) {
+    xslStylesheet.load(stylesheet);
+}
+
+function filehits(hitid) {
+    xsltParam=hitid;
+    xslStylesheet.load("2-z.xsl");
+}
+
+function keywordhits(keyword) {
+    xsltParam=keyword;
+    xslStylesheet.load("2-d.xsl");
+}
+
+function bodyonload(doc) {
+    xmlDoc.load(doc);
+}
+
+function set_prev(i) {
+   pn  = document.getElementById("prev_next");
+   pn.innerHTML = '<button onclick="javascript:prev_next(' + i + ')>Prev</button>';
+}
+
+function prev_next(i) {
+    if (i < 0) return;
+    examp = document.getElementById("example");    
+    examp.innerHTML = "";
+    var fragment = fragArray[i].cloneNode(true);
+    examp.appendChild(fragment);
+    fragIndex = i;    
+    set_prev(i - 1);
+}
+
+</script>
+  
+</head>
+
+<body onload='javascript:bodyonload("getFile?filename=/temp/SrcRpt/xml/2.out.xml")'>
+
+  <a href='javascript:execute("getFile?filename=/temp/SrcRpt/xsl/2-a.xsl")'> Headers </a>
+  <p></p>
+  <a href='javascript:execute("getFile?filename=/temp/SrcRpt/xsl/2-c.xsl")'> Keywords </a>
+  <p></p>
+  <table><tr><td>
+  <div border="0" id="prev_next">
+  </div>
+  </td></tr></table>
+  <div id="example">
+  </div>
+
+</body>
+</html>

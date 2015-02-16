@@ -1,0 +1,59 @@
+<HTML>
+ <HEAD>
+
+    <style type="text/css">
+    <!--
+
+    Copyright ©, 2004-2015, International Business Machines
+
+    This file is part of SrcRpt.
+  
+    SrcRpt is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, version 2.0.
+
+    SrcRpt is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SrcRpt.  If not, see http://www.gnu.org/licenses/.
+
+    -->
+    </style>
+
+
+<script type="text/javascript" src="srcrpt.js"></script>
+<script>
+var parentWindow;
+parentWindow = dialogArguments;
+
+
+var CWD;
+
+function exitDialog(fn) {
+    parentWindow.parentSave(fn);
+}
+
+function bodyonload() {
+    CWD = fileuritostring(parentWindow.parent.CWD);
+    var s = ' <FORM name=fileform onSubmit="processFilename()" METHOD="post" ENCTYPE="multipart/form-data"> File: <INPUT class="controls" id="fileinput" TYPE="file" NAME="filename"> <br><br> <INPUT class="controls" TYPE="submit" NAME="Submit" VALUE="Save"> </FORM>';
+    div1.innerHTML=s;
+}
+
+</script>
+</head>
+
+<body  onload=javascript:bodyonload()>
+
+
+<div id="div1"></div>
+<div id="div2" STYLE="display:none">div2</div>
+  </body>
+</html>
+
+
+
+
+

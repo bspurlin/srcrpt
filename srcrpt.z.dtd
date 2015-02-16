@@ -1,0 +1,63 @@
+<!ELEMENT srcrpt (srchead,hits,uniqlines,summary,licensefiles,binaries,annotations*)>
+<!ELEMENT srchead (timestamp,commandline,keywordfile,keywords,startdir,excluded,excludedfiles,nfiles)>
+<!ELEMENT timestamp (#PCDATA) >
+<!ATTLIST timestamp
+  username CDATA #REQUIRED
+  hostname CDATA #REQUIRED>
+<!ELEMENT commandline (#PCDATA)>
+<!ELEMENT keywordfile (#PCDATA)>
+<!ELEMENT keywords (term+)>
+<!ELEMENT term (#PCDATA)>
+<!ATTLIST term	
+	keyid ID  #REQUIRED		
+	is_regexp CDATA  #REQUIRED	 	
+	note CDATA #IMPLIED >
+<!ELEMENT startdir (dir+)>
+<!ELEMENT dir (#PCDATA)>
+<!ELEMENT excluded (prefixorsuffix*)>
+<!ATTLIST excluded 
+	n CDATA  #REQUIRED>
+<!ELEMENT prefixorsuffix EMPTY >
+<!ATTLIST prefixorsuffix  
+	name CDATA  #REQUIRED>
+<!ELEMENT excludedfiles (excludedfile*)>
+<!ELEMENT excludedfile EMPTY >
+<!ATTLIST excludedfile
+	name CDATA #REQUIRED>
+<!ELEMENT nfiles (#PCDATA)>
+<!ELEMENT hits (file*)>
+<!ELEMENT file (line*)>
+<!ATTLIST file
+	name CDATA #REQUIRED >
+<!ELEMENT line (#PCDATA)>
+<!ATTLIST line  	
+	filpos CDATA     #REQUIRED
+	keyid CDATA     #REQUIRED
+	ulid IDREF     #REQUIRED	match CDATA     #REQUIRED
+>
+<!ELEMENT uniqlines (uniqline*)>
+<!ELEMENT uniqline (#PCDATA)>
+<!ATTLIST uniqline
+	id ID   #REQUIRED    
+	analysis (I|nI) "nI"    
+	note CDATA #IMPLIED >
+<!ELEMENT summary (keyword+)>
+<!ELEMENT keyword (hit*)>
+<!ATTLIST keyword  
+	keyid  IDREF   #REQUIRED >
+<!ELEMENT hit (#PCDATA)>
+<!ATTLIST hit
+	ulid IDREF     #REQUIRED
+	hitcount CDATA   #REQUIRED
+	match CDATA   #REQUIRED>
+<!ELEMENT licensefiles (licensefile*)>
+<!ELEMENT licensefile (#PCDATA)>
+<!ELEMENT binaries (binary*)>
+<!ELEMENT binary (#PCDATA)>
+<!ELEMENT annotations (note*)>
+<!ELEMENT note (#PCDATA)>
+<!ATTLIST note	
+	noteid ID   #REQUIRED >
+  
+
+

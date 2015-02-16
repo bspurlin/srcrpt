@@ -1,0 +1,1482 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<!--
+
+ index.hta
+
+    Copyright ©, 2004-2008, International Business Machines
+
+    This file is part of SrcRpt.
+  
+    SrcRpt is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, version 2.0.
+
+    SrcRpt is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SrcRpt.  If not, see http://www.gnu.org/licenses/.
+
+
+
+-->
+
+<!-- author wspurlin@us.ibm.com -->
+
+<head>
+  <title>Source Report HTA</title>
+  <hta:application id="srcrptHTA"
+     navigable="yes"
+     icon="srcrpt.ico"
+     scroll="yes"
+     WINDOWSTATE="maximize"
+  />  
+
+<script type="text/javascript" src="srcrpt.js"></script>
+<script>
+// The XML document to be loaded
+var SrcRptXmlDoc = new ActiveXObject("Msxml2.DOMDocument.3.0");
+// A temporary document
+var tmpDoc = new ActiveXObject("Msxml2.DOMDocument.3.0");
+tmpDoc.async = false;
+tmpDoc.validateOnParse = false;
+SrcRptXmlDoc.validateOnParse = false;
+
+var fragIndex = -1;  //Be careful, since this will be the index of an array
+fragArray = new Array(5); //An array of prevScreen objects
+
+var DBG_REGEXP  = 0x1;
+var DBG_SCROLL = 0x2;
+var DBG_SRC_SEARCH = 0x4;
+var DBG_PREV = 0x8;
+var debug = 0;
+
+var globalY = 0;
+var sessionRan = (Math.round((Math.random()*10000)));
+Session = new Array(6);  // A cache of Processor objects
+
+var a = new prevScreen(); // a prevScreen object.  The current such object.
+var diffOff = 0;
+var doneOff = 0;
+
+var menuPopup = window.createPopup();
+
+function prevScreen(
+		    aDoc,
+		    y,
+		    s,
+		    processor
+		    ) {
+    this.doc = aDoc;
+    this.y = y;
+    this.savedPrefix = s;
+    this.proc = processor;
+}
+
+//
+// srcrptProcessor object to bind getProcessor(n) and Process() to:
+//        procnum
+//        savprefix
+//        hitid
+//        keyword
+//			scrollpos
+//
+
+function srcrptProcessor( 
+			 procnum,
+			 savprefix,
+			 hitid,
+			 keyword,
+			 scrollpos
+) {
+    this.procnum  = procnum;
+    this.savprefix = savprefix;
+    this.hitid = hitid;
+    this.keyword = keyword;
+    this.scrollpos = scrollpos;
+    this.processor = getProcessor(this.procnum);
+    this.processnow = processNow;
+    this.processnow();
+    this.debug= processorDebug;
+    return this;
+}
+
+function processNow() {
+  a = new prevScreen(Process(this.processor,this.savprefix,this.hitid,this.keyword,this.scrollpos),
+		       0,
+		       this.savprefix + "." + sessionRan,
+		       0
+		       );
+    frame2.main_div.innerHTML = a.doc;
+    frame2.scrollTo(0,this.scrollpos);
+}
+
+function processorDebug() {
+    alert ("processor=" + this.processor + "\n" + "savprefix=" + this.savprefix + "\n" + "hitid=" + this.hitid + "\n" + "keyword=" + this.keyword);
+}
+
+//
+// get the XSL Processor corresponding to the style sheet and
+// cache it.  Returned a cached Processor if possible.
+//
+
+function getProcessor(n){
+    if (Session[n] == undefined){
+	var xslDoc=new ActiveXObject("Msxml2.FreeThreadedDOMDocument.3.0");
+	var xslTemplate=new ActiveXObject("Msxml2.XSLTemplate.3.0");
+        xslDoc.async=false;
+        xslDoc.load( n + ".xsl");
+        xslTemplate.stylesheet=xslDoc;
+        xslProcessor=xslTemplate.createProcessor();
+        Session[n]=xslProcessor;
+    } else {
+	//alert("Got " + n + "  " + Session[n]);
+        xslProcessor=Session[n];
+    }
+    frame2.test.innerHTML="";
+    return xslProcessor;
+}
+
+var globalProcessor;
+
+//
+// Process the XML document, display the resulting
+// processed document and cache the document
+//
+
+function Process(processor,
+		 savPrefix,
+		 xsltHitidParam,
+		 xsltKeywordParam,
+		 scrollpos) {
+    //frame2.test.innerHTML="Process" + "<p>processor=" + processor.attributes + "<p>savPrefix=" + savPrefix + "<p>Hitid=" + xsltHitidParam  + "<p>Keyword=" + xsltKeywordParam  + "<p>diffOff=" + diffOff;
+    processor.addParameter("hitid",xsltHitidParam);
+    processor.addParameter("keyword",xsltKeywordParam);
+    processor.addParameter("nooldcolors",diffOff);
+	processor.addParameter("doneoff",doneOff);
+    processor.input = SrcRptXmlDoc;
+    processor.transform();
+	return processor.output;
+}
+
+function CacheScreen () {
+    fragIndex++;
+    fragArray[fragIndex] = a;
+    if (fragIndex > 0) {set_prev(fragIndex - 1,globalY)}; 
+    a.proc = globalProcessor;
+}
+
+
+//
+// Accessor or transformation functions from links in y.html (lower frame2.main_div)
+//
+
+function headers() {
+    globalProcessor = new srcrptProcessor(1,"headers","","",0);
+    CacheScreen();
+}
+
+function keywords_long() {
+    globalProcessor = new srcrptProcessor(2,"keywords_long","","",0);
+    CacheScreen();
+}
+
+function keywords() {
+    globalProcessor = new srcrptProcessor(3,"keywords","","",0);
+    CacheScreen();
+}
+
+function keywordhits(keyword) {
+    globalProcessor = new srcrptProcessor(4,keyword,"",keyword,0);
+    CacheScreen();
+}
+
+function filehits(hitid,keyword) {
+    globalProcessor = new srcrptProcessor(5,hitid,hitid,keyword,0);
+    CacheScreen();
+}
+
+function files() {
+    globalProcessor = new srcrptProcessor(6,"files","","",0);
+    CacheScreen();
+}
+
+function analyze_keywords(keyword) {
+    globalProcessor = new srcrptProcessor(7,"analysis","","",0);
+    CacheScreen();
+}
+
+var commentwindow;
+
+//
+// annotate_menu()
+// called from the annotate button of menuPopup
+// INPUT: p = either 'keyTable' or 'nukeUL'
+// get the existing notes and populate
+// a drop-down list in some html generated by 8.xsl
+// and glom that html into the menuDialog.  If there is already
+// a note for that table or UL, populate the text box.
+//
+
+function annotate_menu(p) {
+	var s = Process(getProcessor(8),"note",p,"",0); 
+	commentwindow = menuDialog(
+			"b.html",
+			200,
+			700
+			 );
+	var i = 8;
+	while (i-- > 0) {
+		var selectelem = commentwindow.document.getElementById('noteSelect');
+	}
+	if (!selectelem) {
+		alert("annotate_menu" + "\nselectelem=" + selectelem);
+	} else {
+		selectelem.innerHTML = s;
+		var textelem = commentwindow.document.getElementById('noteTextId');
+		var note = getNote(p);
+		if (note != undefined) { 
+			textelem.value = note;
+			textelem.populated = 1;
+			var deleten = commentwindow.document.getElementById('delButton');
+			deleten.style.display = "";
+		}
+	}
+}
+
+function getHtmlForSubstrPopup () {
+    var thishtml = '<form  name="noteForm" onSubmit="parent.processSubstring()">\
+  <table style="WIDTH: 100%; BORDER: 1; FONT: smaller sans-serif;Z-INDEX: 3; BACKGROUND: #d0d0c8; LEFT: 0px; POSITION: absolute; TOP: 0px; HEIGHT: 100%">\
+	<tr><td  style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" >\
+	<input size="100" id="substrTextId" name="substrText"  type="text"  value="none"></input>\
+	</td>\
+	</tr>\
+  <tr height="10%"><td><input  type="submit" value="Submit Regex"></input></td></tr>\
+  </table>\
+</form>';
+    return thishtml;
+}
+
+//setsubstringdone_menu
+
+
+function setsubstringdone_menu(p) {
+
+    var element = frame2.document.getElementById(p);
+    var ulid = element.ulid;
+    var ulnode = SrcRptXmlDoc.documentElement.selectSingleNode('/srcrpt/uniqlines/uniqline[@id="' + ulid + '"]');
+    var frame = document.getElementById("frame2");
+    var substrpane = menuDialog(
+			"b.html",
+			200,
+			700
+			 );
+    var selectelem = substrpane.document.getElementById('noteSelect');
+    selectelem.innerHTML = getHtmlForSubstrPopup();
+    var textelem = substrpane.document.getElementById('substrTextId');
+    textelem.value = ulnode.text ;
+}
+
+function processSubstring(s, for_real) {
+    menuPopup.hide();
+    var Uls = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/uniqlines/uniqline');
+    var members = new Enumerator(Uls);
+    var RXp = new RegExp(s);
+    var i,j=0;
+    for (; !members.atEnd(); members.moveNext()) {
+	i = members.item();
+	if (i.text.match(RXp)) {
+	    j++;
+	    if (for_real) i.setAttribute("analysis",'nI') ;
+	}
+    }
+    if (!for_real) processSubstrMenuHtml(j, s) 
+	else globalProcessor.processnow();
+}
+
+function processSubstrMenuHtml(j, s) {
+    var nukWidth = 184, nukHeight = 140;
+    var k  = '<TABLE style="BORDER: none; FONT: smaller sans-serif;Z-INDEX: 3; BACKGROUND: #d0d0c8; LEFT: 0px; POSITION: absolute; TOP: 0px; HEIGHT: 100px" border="1px"><TR><TD style="BORDER: black 1px solid;">Set ' + j + ' UL\'s matching "' + s + '" to \"non-interesting\"?</TD></TR><TR><TD><button onclick="javascript:parent.processSubstring(\'' + s + '\',true)">Yes</button><button onclick="javascript:parent.processSubstringq(\'' + s + '\',false)" >No</button></TD></TR> </TABLE>';
+    menuPopup.document.body.innerHTML = k;
+    menuPopup.show(400, 300, nukWidth, nukHeight, document.body);
+    //    alert(menuPopup.document.body.innerHTML);
+}
+
+var j = 1;
+
+//
+// TBD:  Poll the frame scrollTop property
+//
+
+function getScrollPos(y){
+    globalY = y;
+    globalProcessor.scrollpos = y;
+    if ((debug & DBG_SCROLL) == DBG_SCROLL) {
+	frame2.test.innerHTML = j++ + "  scrollTop=" + y ;
+    }
+}
+
+var globalXMLFn;
+
+function bodyonload(doc,wd) {
+    if (wd == undefined) wd = CWD;
+    frame2.main_div.innerHTML="";
+    frame2.test.innerHTML="loading";
+    frame1.prev_next.innerHTML="Prev";
+    fragIndex = -1;
+    comparisonULs = {};
+    SrcRptXmlDoc.load(doc);
+    if (SrcRptXmlDoc.parseError.errorCode != 0) {
+	var myErr = SrcRptXmlDoc.parseError;
+	var RXp = /system cannot locate the resource/;
+	if (myErr.reason.match(RXp)) {
+	    frame2.test.innerHTML = 
+		"Use the <b>File->Open...</b> menu to select a SrcRpt XML file";
+	} else {	
+	    frame2.test.innerHTML="Error line " 
+		+ myErr.line 
+		+ ":" + myErr.linepos 
+		+ " : " 
+		+ myErr.reason;
+	}
+    } else {
+	var terms = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/srchead/keywords/term[not (@keyid)]');
+	// Convert an older SrcRpt XML file to 3006 format
+	if (terms.length > 0) {
+		alert("Converting old-format SrcRpt XML document " + doc + " to .3006 format.  Please save after conversion is complete");
+		var j = setCollectionIds(terms,"key");
+		var newTerm= SrcRptXmlDoc.createNode(1, "term", "");
+		newTerm.text = "email";
+		newTerm.setAttribute("keyid", j++);
+		var keywords = SrcRptXmlDoc.selectSingleNode('/srcrpt/srchead/keywords');
+		keywords.appendChild(newTerm);
+		newTerm= SrcRptXmlDoc.createNode(1, "term", "");
+		newTerm.text = "URL";
+		newTerm.setAttribute("keyid", j++);
+		keywords.appendChild(newTerm);
+		rmQQ(terms);
+		var keywords = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/summary/keyword[not (@keyid)]');
+		setCollectionIds(keywords,"key");
+		var lines = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/hits/file/line[not (@ulid)]');
+		fixIds(lines,"ulid");
+		var lines = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/hits/file/line[not (@keyid)]');
+		setLineKeyid(lines);
+		var lines = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/summary/keyword/hit[not (@ulid)]');
+		fixIds(lines,"ulid");
+	}
+	frame2.test.innerHTML="XML " + doc + " loaded OK;";
+	document.title = doc;
+	CWD = wd;
+	globalProcessor = new srcrptProcessor(1,"headers","","",0);
+    }
+    globalXMLFn = doc;
+}
+
+// The keyword ids ("keyid" attr) are set during the scan phase.
+// Set them here on old scans to ensure reverse compatibility. N. B. xml:id
+// must be unique
+
+function setCollectionIds(nodeList,attr) {
+   	var members = new Enumerator(nodeList);
+    var j = 0;
+    var i;
+   	for (; !members.atEnd(); members.moveNext()) {
+		i = members.item();
+		if(i.id){
+		} else {
+			i.setAttribute(attr + "id", j++);
+		}
+	}
+	return(j);
+}
+
+function setLineKeyid (lines){
+	var i;
+	var keyid;
+	var keyword;
+	var term;
+   	var members = new Enumerator(lines);
+   	for (; !members.atEnd(); members.moveNext()) {
+		i = members.item();
+		keyword = i.getAttribute('keyword');
+		term = SrcRptXmlDoc.documentElement.selectSingleNode('/srcrpt/srchead/keywords/term[. = "' + keyword + '"]' );
+		if (term) {
+			keyid = term.getAttribute("keyid");
+			i.setAttribute("keyid",keyid);
+		}
+	}   	
+}   	
+   	
+   	
+// This here for reverse compatiblity when need
+// to fix up potentially redundant id attr values
+// xml:id must be unique
+
+function fixIds(nodeList,attr) {
+    var members = new Enumerator(nodeList);
+    var i;
+    var id;
+    var j = 0; 
+    for (; !members.atEnd(); members.moveNext()) {
+	i = members.item();
+	if(id = i.getAttribute("id")) {
+	    i.removeAttribute("id");
+	    i.setAttribute(attr, id);
+	}
+    }
+}
+
+// An older SrcRpt XML file will have "QQ" in the text of the term element.  
+// Get rid of it and set the is_regexp attribute instead.
+
+function rmQQ(nodeList) {
+    var members = new Enumerator(nodeList);
+    var i;
+    var s;
+    var RXp = /\s*QQ\s*/i;
+    for (; !members.atEnd(); members.moveNext()) {
+	i = members.item();
+	s = i.text;
+	if (RXp.test(s)) {
+	    s = s.replace(RXp,"");
+	    i.text = s;
+	    i.setAttribute("is_regexp",1);
+	} else {
+	    i.setAttribute("is_regexp",0);
+	}
+    }
+}
+
+
+//
+// Create a "prev" button.  There is no browser "back"
+// functionality because there is only one document
+// and nothing to go back to.
+//
+
+
+function set_prev(i,y) { 
+    if ((debug & DBG_PREV) == DBG_PREV) {
+	alert("set_prev: i=" + i + "\ny=" + y);
+    }
+    var tag =  '<button class="x2controls" onclick=javascript:parent.prev_next(' 
+	+ i 
+	+ ')>Prev</button>'
+    frame1.prev_next.innerHTML = tag;
+    frame1.prev_next.style.width = 0;
+}
+
+//
+// Implement "prev".  TBD: "next".
+//
+
+function prev_next(i) { 
+    if (i < 0) return;
+    frame2.test.innerHTML = "";
+    frame1.test.innerHTML = "";
+    a = fragArray[i];
+    frame2.main_div.innerHTML = a.doc;
+    var y = a.proc.scrollpos;
+    globalProcessor = a.proc;
+    fragIndex = i;    
+    if (i > 0) {
+	set_prev(i - 1, fragArray[i - 1].y);
+    }
+    frame2.scrollTop = y;
+    if ((debug & DBG_PREV) == DBG_PREV) {
+	frame2.test.innerHTML = "prev_next: \n</p><p>"
+	    + "i=" 
+	    + i 
+	    + "\n</p><p>y="
+	    +y
+	    + "\n</p><p>frame scrollTop="
+	    + frame2.scrollTop;
+    }
+
+    // the scrollTo will not work until frame2 is loaded, 
+    // so see handler
+
+    globalY = y;
+
+    // 2 iterations of scrollToi seem to consistently work
+    // but I may use more.
+
+    var scrollToi = 10;
+    while (scrollToi--) {
+	frame2.scrollTo(0,y);
+    }
+}
+
+var coa = false;
+
+function nukeFileMenuHtml(fn, functionname, compareonlyanalzyed, n) {
+    var v1, v2, v3; 
+    if (compareonlyanalzyed) {
+	v1 = "analyzed";
+	v2 = "no analyzed";
+	v3 = "";
+    } else {
+	v1 = n > 0? n: "all";
+	v2 = "no";
+	v3 = " to Done";
+    }
+    var s = '<TABLE style="BORDER: none; FONT: smaller sans-serif;Z-INDEX: 3; BACKGROUND: #d0d0c8; LEFT: 0px; POSITION: absolute; TOP: 0px; HEIGHT: 100px" border="1px"><TR><TD style="BORDER: black 1px solid;">Set ' + v1 + ' UL\'s from ' + fn + v3 + '? Warning:  the assumption is that ' + fn +' has been analyzed and ' + v2 + ' Ul\'s in it need further analysis in ' + document.title  + '.</TD></TR><TR><TD><button onclick="javascript:parent.' + functionname + '(\'y\')">Yes</button><button onclick="javascript:parent.' + functionname  + '(\'n\')" >No</button></TD></TR> </TABLE>';
+    return s;
+}
+
+
+var comparisonULs = {};
+var comparisonNotes;
+var comparisonTerms = {};
+
+function compareXML(fn, x, y, c) {
+    coa = c;
+    if (SrcRptXmlDoc.documentElement == null) {
+	alert ("You must File->Open a SrcRpt XML document before you File->Compare it to another document.");
+	return(0);
+    }
+    var SrcRptCompareDoc = new ActiveXObject("Msxml2.DOMDocument.3.0");
+    SrcRptCompareDoc.validateOnParse = false;
+    var i;
+    var s;
+    var note;
+    var analysis;
+    SrcRptCompareDoc.load(fn);
+    if (SrcRptCompareDoc.parseError.errorCode != 0) {
+	var myErr = SrcRptCompareDoc.parseError;
+	var RXp = /system cannot locate the resource/;
+	if (myErr.reason.match(RXp)) {
+	    frame2.test.innerHTML = 
+		"Use the <b>File->Compare...</b> menu to select a SrcRpt XML file";
+	} else {	
+	    frame2.test.innerHTML="Error line " 
+		+ myErr.line 
+		+ ":" + myErr.linepos 
+		+ " : " 
+		+ myErr.reason;
+	}
+    } else {
+
+	var Uls = SrcRptCompareDoc.documentElement.selectNodes('/srcrpt/uniqlines/uniqline');
+	comparisonNotes = SrcRptCompareDoc.documentElement.selectNodes('/srcrpt/annotations/note');
+	var members = new Enumerator(Uls);
+	var newcomparison;
+	for (; !members.atEnd(); members.moveNext()) {
+	    i = members.item();
+	    newcomparison = { note:0 };
+	    if (note = i.getAttribute("note")) {
+		newcomparison.note = note;
+	    }
+	    if (analysis = i.getAttribute("analysis")) {
+		newcomparison.analysis = analysis;
+	    }
+	    comparisonULs[i.text] = newcomparison;
+	}
+
+	var Terms = SrcRptCompareDoc.documentElement.selectNodes('/srcrpt/srchead/keywords/term');
+	members = new Enumerator(Terms);
+	for (; !members.atEnd(); members.moveNext()) {
+	    i = members.item();
+	    newcomparison = { note:0 };
+	    if (note = i.getAttribute("note")) {
+		newcomparison.note = note;
+	    }
+	    comparisonTerms[i.text] = newcomparison;
+	}
+
+	var frame = document.getElementById("frame2");
+	menuPopup.document.body.innerHTML = nukeFileMenuHtml("SrcRpt XML file " + fn, "Compare", coa);
+	nukWidth = 180 + (fn.length * 4);
+	nukHeight = 100 + (fn.length + 30);
+        menuPopup.show(x + frame.width/4, y + frame.height/4, nukWidth, nukHeight, document.body);
+    }
+}
+
+function Compare(flag) {
+    menuPopup.hide();
+    if (flag == 'n') return 0;
+
+    var comparison;
+
+    var Uls = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/uniqlines/uniqline');
+
+    members = new Enumerator(Uls);
+    for (; !members.atEnd(); members.moveNext()) {
+	i = members.item();
+	comparison =  comparisonULs[i.text];
+	// alert('here Compare i.text=' + i.text + "\tcomparison=" + comparisonULs[i.text]);
+	if (comparison != undefined) {
+	    if(!coa) {
+		i.setAttribute("analysis",'nI') ;
+	    } else {
+		if (comparison.analysis != undefined) i.setAttribute("analysis", comparison.analysis);
+	    }
+	}
+    }
+
+
+    if (comparisonNotes.length > 0) {
+	var notes = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/annotations');
+	// if there is not an annotation node, create one
+	if (notes.length == 0) {
+		var AnnotationNode= SrcRptXmlDoc.createNode(1, "annotations", "");
+		root = SrcRptXmlDoc.documentElement;
+		root.appendChild(AnnotationNode);
+		var members = new Enumerator(comparisonNotes);
+		for (; !members.atEnd(); members.moveNext()) {
+		    AnnotationNode.appendChild(members.item());
+		}
+		members = new Enumerator(Uls);
+		for (; !members.atEnd(); members.moveNext()) {
+		    i = members.item();
+		    comparison =  comparisonULs[i.text];
+		    if (comparison != undefined) {
+			if (comparison.note > 0) {
+			    i.setAttribute("note", comparison.note);
+			}
+		    }
+		}
+
+		var Terms = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/srchead/keywords/term');
+		var members = new Enumerator(Terms);
+		for (; !members.atEnd(); members.moveNext()) {
+		    i = members.item();
+		    comparison = comparisonTerms[i.text];
+		    if (comparison != undefined) {
+			if (comparison.note > 0) {
+			    i.setAttribute("note", comparison.note);
+			}
+		    } else {
+			alert("Caution: scans being Compared were not carried out with the same keywords. " + i.text + " not in original");	    
+		    }
+		}
+	} else {
+	    alert("Target document already has annotations.No annotations will be imported");
+	}
+    }
+
+    globalProcessor.processnow();
+    CacheScreen();
+
+}
+
+var rmdirnaa = new Array();
+
+function RmDir(dirn, x, y) {
+    var match = /\/([^/]+)$/.exec(dirn); 
+    var name = match[1];
+    var Files = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/hits/file');
+    var files = new Enumerator(Files);
+    var path;
+    var hitNodeList;
+    var ulnode;
+    var hit;
+    var ulid;
+    var n = 0;
+ 
+    for (; !files.atEnd(); files.moveNext()) {
+	ii = files.item();
+	path = ii.getAttribute("name");
+	if (path.indexOf(dirn) != -1) {
+	    if (ii.hasChildNodes()) {
+		hitNodeList = ii.childNodes;
+		for (var i=0; i< hitNodeList.length; i++) {
+		    hit = hitNodeList.item(i);
+		    ulid = hit.getAttribute("ulid");
+		    if (rmdirnaa[ulid] != 1) {
+			rmdirnaa[ulid] = 1;
+			n++;
+		    }
+		}
+	    }
+	}
+    }
+    var frame = document.getElementById("frame2");
+    menuPopup.document.body.innerHTML =  nukeFileMenuHtml("directory " + name, "RmDirnConfirmed", false, n );
+    var nukWidth = 180 + (name.length * 100);
+    var nukHeight = 100 + (name.length + 30);
+    menuPopup.show(x + 100,y + 100, nukWidth, nukHeight, document.body);
+}
+
+function RmDirnConfirmed(answer) {
+    var ulnode, ulid;
+    if (answer == 'n') return 0;
+    for (ulid in rmdirnaa) {	
+	ulnode = SrcRptXmlDoc.documentElement.selectSingleNode('/srcrpt/uniqlines/uniqline[@id="' + ulid + '"]');	
+	ulnode.setAttribute("analysis",'nI');
+	//alert(ulnode.xml + "\n" + "ulid=" + ulid);
+    }
+    menuPopup.hide();
+    globalProcessor.processnow();
+    CacheScreen();
+}
+
+function saveXML(fn) {
+	var doc = fn ? fn : document.title;
+    SrcRptXmlDoc.save(doc);
+    document.title = doc;
+    //alert("saved " + doc);
+}
+
+//
+// Save the report with a hopefully descriptive and unique filename.
+//
+
+function save_tmpDoc() {
+    tmpDoc.loadXML('<html><head><META http-equiv="Content-Type" content="text/html;charset=UTF-8"></META></head>' + a.doc + frame2.test.innerHTML + "</html>");
+    var status = tmpDoc.parseError.errorCode;
+    if (status != 0) {
+	var myErr = tmpDoc.parseError;
+	frame2.test.innerHTML = "SrcRpt Save Error line " 
+	    + myErr.line 
+	    + ":" 
+	    + myErr.linepos 
+	    + " : " 
+	    + myErr.reason;
+    } else {
+	var fname = a.savedPrefix + ".srcrptsaved.html";
+	tmpDoc.save(fname);
+	alert("The report in the lower frame has been saved as " + fname);
+    }
+}
+
+function load_tmpDoc(F) {
+    frame2.main_div.innerHTML="";
+    frame2.test.innerHTML="loading " + F + "...";
+    tmpDoc.load(F);
+    if (tmpDoc.parseError.errorCode != 0) {
+	var myErr = tmpDoc.parseError;
+	frame2.test.innerHTML="Error line " 
+	    + myErr.line 
+	    + ":" + myErr.linepos 
+	    + " : " 
+	    + myErr.reason;
+	return(1);
+    } else {
+	frame2.test.innerHTML="XML " + F + " loaded OK;";
+	return(0);
+    }
+}
+
+//
+// replaceRegexpOps(s):
+// Escape all chars in s in order to
+// accomodate search terms including "(", e. g, "(C)",
+// or other regexp operators.
+//
+
+function replaceRegexpOps(s, c) {
+    var RXp = /\!/;
+    // Get rid of trailing bang.
+    if (c) {
+	// it is a regexp don't process '!'
+	RXp= /\&lt\;/;
+	s = s.replace(RXp,'<');
+	RXp = /\(\?<![^\)]+\)\s*/;   //Javascript doesn't support  negative look-behind assertion
+        s = s.replace(RXp,'');
+    } else {
+	if (s.match(RXp)) {
+	    // Can't make replace work here
+	    // s.replace(RXp,'');
+	    s = s.substring(0,s.indexOf('!'));
+	}
+    }
+    sub = c ? '' : '\\' ;
+    RXp = /(?=[\.\$\(\)\+\*\\])+/gim;
+    if ((debug & DBG_REGEXP) == DBG_REGEXP) {
+	o = o + "<p>\n" + 
+	    "replaceRegexpOps: s =" + s +
+	    "<p>\n" +
+	    "sub=" + sub + "<p>\n";
+	
+    }
+    if (RXp.test(s)) {
+	if ((debug & DBG_REGEXP) == DBG_REGEXP) {
+	    o = o + "<p>\n" + 
+		"replaceRegexpOps: FOUND:  s =" + s +
+		"<p>\n" +
+		"sub=" + sub + "<p>\n";
+
+	}
+	return s.replace(RXp,sub + RegExp.$1);
+    } else {
+	return s;
+    }
+}
+
+//
+// getContextRegexp():
+// create a regular expression for context searches
+// around a keyword, e. g.:
+// ((.{0,6})Apache(.{0,6}))
+//
+
+function getContextRegexp(b4,aftr,term) {
+    var RXp = /\s/g;
+    term = term.replace(RXp,'[\\*|\\s|\\n|\\r|\\#|\\-|\\/]{1,9}');
+    var rv =
+   	'(.{0,' 
+	+ b4 
+	+ '})(' 
+	+ term 
+	+ ')(.{0,' 
+	+ aftr 
+	+ '})';
+    return rv;
+}
+
+var o = "";
+
+function grabTermContext(b4,aftr,term,line) {
+    var regexp = getContextRegexp(b4,aftr,term);
+    var RXp = new RegExp(regexp,"i");
+    rpl = line;
+    var aa = rpl.match(RXp);
+    var bb;
+    if (aa) {
+	rpl = aa[0];
+	if (rpl.length != b4 + term.length + aftr) {
+	    if ((debug & DBG_REGEXP) == DBG_REGEXP) {
+		o = o + "first match: \n<p>"
+		    + "line="
+		    + line
+		    + "<p>\nregexp="
+		    + regexp
+		    + "<p>\n0: " 
+		    + aa[0] + " length=" + aa[0].length
+		    + "\n</p><p>\n1: " 
+		    + aa[1] + " length=" + aa[1].length
+		    + "\n</p><p>\n2: " 
+		    + aa[2] + " length=" + aa[2].length
+		    + "\n</p><p>\n3: " 
+		    + aa[3] + " length=" + aa[3].length
+		    + "\n</p><p></p>\n " 
+		    ;
+	    }
+	    if (b4 > aa[1].length) aftr += b4 - aa[1].length
+	    else
+		if (aftr > aa[3].length) b4 += aftr - aa[3].length;
+	    regexp = getContextRegexp(b4,aftr,term);
+	    RXp = new RegExp(regexp,"i");
+	    rpl = line;
+	    aa = rpl.match(RXp);
+	    if ((debug & DBG_REGEXP) == DBG_REGEXP) {
+		o = o + "<p><p>second match: regexp=" + regexp
+		    +  "\n</p><p>"
+		    + aa[0] + " length=" + aa[0].length
+		    + "\n</p><p>\n1: " 
+		    + aa[1] + " length=" + aa[1].length + " b4=" + b4
+		    + "\n</p><p>\n2: " 
+		    + aa[2] + " length=" + aa[2].length
+		    + "\n</p><p>\n3: " 
+		    + aa[3] + " length=" + aa[3].length + " aftr=" + aftr
+		    + "\n</p><p></p>\n " 
+		    ;
+	    }
+	}
+    }
+    if (aa) {
+	rpl = aa[0];
+	RXp = new RegExp('(.+)[\\n|\\r]');
+	bb = RXp.exec(rpl);
+	if (bb){rpl = bb[0]}
+    } else {
+	frame2.test.innerHTML = "Alert: <PRE>" + line +  "</PRE> did not match " + regexp;
+	rpl = term;
+    }
+    RXp = /[\r\n]/g;
+    var rpl = rpl.replace(RXp,'');
+    RXp = /^\s+/;
+    var rpl = rpl.replace(RXp,'');
+    o = o
+	+ "\n</p><p>\nFinal term,line: \"<pre>"
+	+ rpl
+	+ "\n</p>"
+	+ line
+	+ "</pre>\"";
+    return rpl;
+}
+
+
+var globalSearchString;
+var globalFallbackString;
+var globalMatch_l;
+var globalQP;
+var mywindow = null;
+
+function isTroubleFile(fn) {
+	Rxp = /\.(js|xml|inf|xsl|bat|hqx|svg|vbs|ps|c)$/i;
+	return fn.match(Rxp);
+}
+
+
+// 
+// iwindowset(term,file_id):
+// Open, in a new window, the source file 
+// that contains the unique line indexed by file_id
+// of interest.  Derive a search string of limited length
+// from the unique line. When deriving this string,
+// try to remove tags from known html.
+// Set a handler for onload events.
+//
+
+
+function iwindowset(keyid,file_id,match_l){
+
+    // If user has closed the child window catch exception that occurs when
+    // an attempt is made to access properties of the no-existent window
+    if (mywindow != null)
+    	try
+	    {
+		myWindowLeft = mywindow.screenLeft;
+		myWindowTop =  mywindow.screenTop - 32;
+		myWindowWidth = mywindow.document.body.clientWidth;
+		mywindow.close();
+	    }
+	catch(e)
+	    {  /*alert ("the window is non-existent");*/ }
+
+    globalMatch_l = match_l;
+
+    // Get the fully qualified path of the source file from the A element
+    // with the appropriate id, avoiding passing fqp's as javascript
+    // parameters, which can fall afoul of the "\" dirsep in old 
+    // xml files.
+    var file_el = frame2.document.all[file_id];
+    qp =  file_el.innerText;
+    // Get the UL
+    var uniqueline = frame2.UNIQLINE.innerText;
+    var rpl = uniqueline;
+    // Get the search term from the keyid and determine if the term is a regexp, an email or a URL.
+    term = SrcRptXmlDoc.documentElement.selectSingleNode('/srcrpt/srchead/keywords/term[@keyid = "' + keyid + '"]' );
+    // For the Copyright Holder report, get the term from the first row.
+    if(!term)  term = SrcRptXmlDoc.documentElement.selectSingleNode('//file/line[@keyid = "' + keyid + '"]' );
+    var c = 1 * term.getAttribute("is_regexp");
+    term = term.text;
+    // The following could be better done by testing a "pseudo" attribute on the term
+    if (term == 'URL' | term == 'email') term = rpl;
+    o = "";
+    // The regexpops will be unaffected if the term is a regexp
+    // Otherwise the regexops will be escaped
+    term = replaceRegexpOps(term, c); 
+    // <pre id=UNIQLINE>
+    var aa;
+    var htmlfileRXp = /html?$/i;
+    if (qp.match(htmlfileRXp)) {
+	var RXp = />(\s+)</ig;
+	var rpl = rpl.replace(RXp,'><');
+	var regexp = '<(?:.*?)(\S*' + term + '\S*)(?:.*?)>';
+	RXp = new RegExp(regexp,"i");
+	aa = rpl.match(RXp);
+	if (aa) {
+	    rpl = aa[0];
+	} else {
+	    RXp = /(<.+?>)*/ig;
+	    rpl = rpl.replace(RXp,'');
+	    RXp = /(<[^<>].*)$/ig;
+	    rpl = rpl.replace(RXp,'');
+	    RXp = /(^[^<>].*>)*/ig;
+	    rpl = rpl.replace(RXp,'');
+	    if (rpl.length < term.length) { 
+		RXp = /((http|ftp|https|mailto):(\/\/)*(\w|-)+[\.@](\w|-|\.|\/)+)/;
+		aa = RXp.exec(uniqueline);
+		if (aa != null) { 
+		    rpl = aa[0] ;
+		} else {
+		    rpl = term;
+		}
+	    }
+	}
+    }
+    var b4 = 8;
+    var aftr = 8;
+    // Grab context before and after the term, if possible
+
+    globalSearchString = grabTermContext(b4,aftr,term,rpl);
+    globalFallbackString = term;
+    globalQP = qp;
+    RXp = /^\/|^[a-zA-Z]:/;
+    if ( ! globalQP.match(RXp)) {
+	globalQP = CWD + "/" + qp;
+    }
+    if ((debug & DBG_REGEXP) == DBG_REGEXP) {
+	frame2.test.innerHTML= "globalQP = " +
+	    globalQP	 +
+	    "<p>\n" + 
+	    "globalSearchString = " + 
+	    globalSearchString +
+	    "<p>\n" +
+	o 
+    }
+  	var i = 8000;
+  	if (isTroubleFile(globalQP)) {
+  		var fso = new ActiveXObject("Scripting.FileSystemObject");
+   		var f = fso.OpenTextFile(globalQP, 1);
+  		var r = f.ReadAll();
+  		f.close();
+  		openIt("", r);
+  	} else {
+  		openIt(globalQP);
+	}
+}
+
+var myWindowLeft = 100;
+var myWindowTop = 100;
+var myWindowWidth = 900;
+function openIt(s, r) {
+    try {
+    	mywindow=window.open( s,
+			 "mywindow",
+			 "height=700,width=" +  myWindowWidth + ",left=" + myWindowLeft + ",top=" + myWindowTop + ",scrollbars=yes,status=yes,resizable=yes"
+			 );
+		var start = new Date();
+		start = start.getTime();
+		var then = new Date();
+		var timedout = false;
+   		while (! (mywindow.document.readyState == 'complete') && i-- && !timedout) {
+   			then = Date();
+    		timedout = then.getTime - start < 2000 ? false : true;
+				//frame2.test.innerHTML = frame2.test.innerHTML + "<p>i=" + i;
+   		}
+   		if (r) mywindow.document.body.innerText = r;
+		mywindow.onreadystatechange = myWindow();
+	} catch (e) {
+		// frame2.test.innerHTML =  "mywindow open: " + s + "<p>" + e.name + "<p>" + e.message + "<p>Please close \"mywindow\" before proceeding.";
+	}
+}
+
+
+//
+// Handler for source code window onload events
+// that searches for the unique-line derived string
+// and positions and emphasizes the selection
+// when it finds it, or displays an alert
+// if it cannot.
+//
+
+function myWindow() {
+    var state = mywindow.document.readyState;
+    var matched = false;
+    var str = "";
+    // frame2.test.innerHTML = frame2.test.innerHTML + "<p>" + "mywindow state=" + state; 
+    if (state == "complete" || state == "interactive" ) {
+	try {
+		mywindow.document.title = "SrcRpt: myWindow:  " + globalQP;
+	}  catch (e) {
+		frame2.test.innerHTML =  "could not set myWindow Title: to " + globalQP + "<p>" + e.name + "<p>" + e.message;
+	}
+	var rng = mywindow.document.body.createTextRange();
+	if (rng == null) {alert("createTextRange failed");}
+	// First attempt to find
+	var found = rng.findText(globalSearchString);
+	if ((debug & DBG_SRC_SEARCH) == DBG_SRC_SEARCH) alert("globalSearchString=" + globalSearchString);
+	if(!found) {
+	    //
+	    // Second attempt. If the search string is not found, try 
+	    // to find it as the value of an href attribute
+	    // within an anchor element.
+	    //
+	    // alert (globalSearchString + "not found");
+	    globalSearchString = replaceRegexpOps(globalSearchString); 
+	    var urlRe = new RegExp(globalSearchString);
+	    var aAs = mywindow.document.body.getElementsByTagName("A");
+	    str = "The A node list has " + aAs.length + "items.\n";
+	    for (var i=0; i < aAs.length; i++) {
+		var aHref = aAs.item(i).attributes.getNamedItem("href").nodeValue;
+		matched = urlRe.test(aHref);
+		if (matched) break;
+		str = str 
+		    + (i + 1) + ":" 
+		    + aAs.item(i).nodeName 
+		    + " " 
+		    + aHref 
+		    + " matched=" 
+		    + matched 
+		    + "\n";
+	    }
+	    if ((debug & DBG_SRC_SEARCH) == DBG_SRC_SEARCH) alert(str);
+	    if(matched) {
+		found = true;
+		rng.moveToElementText(aAs.item(i));
+	    }
+	}
+
+	// Third attempt.  Try the original term passed in from 5.xsl-generated HTML
+	if(!found){found = rng.findText(globalFallbackString)};
+	// Fourth attempt.  Try match_l passed in from iwindowset match column in 5.xsl-generated HTML
+	if(!found){found = rng.findText(globalMatch_l)};
+      	if (found) {
+	    rng.execCommand("Bold");
+	    rng.execCommand("FontSize",false,5);
+	    rng.execCommand("ForeColor",false,"#FF00F0");
+	    rng.scrollIntoView();
+	    mywindow.scrollBy(0,10);
+	} else {
+	    alert (globalSearchString 
+		   + " was not found.  Try searching for it in the \"View->Source\" pane of " 
+		   + mywindow.document.title );
+	}
+	mywindow.focus();	
+    } else {   /*alert("state=" + state);*/ }
+}
+
+function currdir() {
+      var L = window.location.href;
+      var RXp = /^file:\/+/;
+      L = L.replace(RXp,'');
+ //     test.innerHTML = L; 
+      RXp = /\/[^\/]+$/;
+      L = L.replace(RXp,'');
+ //     test.innerHTML = L;
+      RXp = /\%20/g;
+      L = L.replace(RXp,' '); 
+      return L ;
+}
+
+var CWD = currdir();
+
+
+// nukem
+// Right-clicking on a keyword table header or UL row in a table gets you here.
+//
+// Nukes the appropriate table id to 'keywordTable' in the frame2 HTML document,
+// which contains a table or tables of uniqlines organized by keyword
+//
+// Nukes the row id to 'nukeUL' when called from a UL row in a table.
+//
+// Raises a popup menu "menuPopup".  See srcrpti.xsl.
+//
+// Function calls from menuPopup html will operate on either ULs or keywordTables.
+// They may or may not have to pass params 'keywordTable' or 'nukeUL', 
+// depending on whether the functions they are calling have to operate on both.
+//
+//  INPUT: 
+//		('keyTable','keyTable') when called from a keywords-4.xsl frame2 HTML table
+//		('TAB_' + key id,'keyTable') when called from a keywords+uniqlines-2.xsl frame2 HTML table
+//		('UL_' + ul id,'nukeUL') when called from a ul row in either of the above tables.
+//
+
+var fil;
+
+function nukem(p, id) {
+    //alert("nukem: p=" + p + "\nid=" + id + "\nX=" + frame2.event.offsetX + "\nY="  +  frame2.event.offsetY   );
+    var nukWidth = 184, nukHeight = 100; 
+	frame2.event.returnValue=false;
+    if(id == 'keywordTable') {
+    	menuPopup.document.body.innerHTML = frame2.nukeKeyMenuDiv.innerHTML;
+	nukHeight = nukHeight + 20;
+    } else {
+    	if (id == 'nukeUL') {
+    		menuPopup.document.body.innerHTML = frame2.nukeULMenuDiv.innerHTML;
+	    } else {
+	         if (id == 'nukeFIL') {
+		     fil = p;	
+		     menuPopup.document.body.innerHTML = menuPopup.document.body.innerHTML = 
+			 nukeFileMenuHtml("source file " + p, "setULIDsInFileAnalyzed", false);
+		     nukWidth = nukWidth + (p.length * 4);
+		     nukHeight = nukHeight + (p.length + 30);
+	         } else {
+		     alert("unknown id " + id + "\np=" + p);
+	        }
+	}
+    }
+    menuPopup.show(frame2.event.clientX, frame2.event.clientY, nukWidth, nukHeight, document.body);
+	// The following nukes the id in the HTML, not the XML, so the
+	// HTML has to be refreshed by processnow() so the HTML id reverts to
+	// the original value.
+    var element = frame2.document.getElementById(p);
+    if (element) { 
+    	//alert("nukem element: id=" + element.id); 
+    	element.id = id;
+    }
+}
+
+function setULIDsInFileAnalyzed(g) {
+    menuPopup.hide();
+    if (g == 'n' || fil == undefined) {  return 0; }
+    var nodeList = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/hits/file[@name = "' +  fil + '"]/line' );
+    var members = new Enumerator(nodeList);
+    var ulid;
+    var ulnode;
+    var i; var j = 0;
+    for (; !members.atEnd(); members.moveNext()) {
+	j++;
+	i = members.item();
+	ulid = i.getAttribute("ulid"); 
+	ulnode = SrcRptXmlDoc.documentElement.selectSingleNode('/srcrpt/uniqlines/uniqline[@id="' + ulid + '"]');	
+	ulnode.setAttribute("analysis",'nI');
+    }
+    alert("Set " + j + " UL's in " + fil + " to done.");
+    fil = undefined;
+    globalProcessor.processnow();
+}
+
+
+AnalysisAttrs = new Array(0, "I", "nI");
+
+//
+// class Mark - mark an object 
+// (either a table of ULs or an individual UL)
+// with auxiliary information
+//
+// id is either 'keyTable' or 'nukeUL'
+// p == 0, 1, 2 for "default", "active" or "done" 
+// 
+
+
+function Mark (p, id) {
+	this.p = p;
+	this.id = id;
+	this.doUlorTableMethod = doUlorTable;
+	this.ulMethod = setULAnalysis;
+	this.tableMethod = overUls;
+}
+
+// Mark methods
+
+// a Mark object's doUlorTable() method expects any table it 
+// operates on to have the id 'keywordTable', 
+// which will have to be set, at least for 2.xsl tables, in nukem(), 
+// which identifes the right table to set by its keyword id.
+//
+// Uls have had the id 'nukeUL' set.
+//
+// Mark's doUlorTableMethod will invoke either ulMethod or tableMethod
+
+function doUlorTable() {
+	var element = frame2.document.getElementById(this.id);
+	//alert("doUlorTable: p=" + this.p + "\nid=" + this.id + "\nelement.id=" + element.id);
+    if(this.id == 'keywordTable') {
+    	this.tableMethod(element);
+	} else {
+    	if (this.id == 'nukeUL') {
+			//alert("nukeUL: " + element.ulid);
+			this.ulMethod(element.ulid,this.p);
+	    } else {
+		    alert("ulTable: unknown id " + this.id);
+    	}
+    }		
+	menuPopup.hide();
+}
+
+
+function overUls(element) {
+    	var members = new Enumerator(element.rows);
+		var i;
+		var node;
+		for (; !members.atEnd(); members.moveNext()) {
+			i = members.item();
+			if(i.id){
+				this.ulMethod(i.id,this.p);
+			}	
+		}		
+}
+
+function setULAnalysis(id, p) {
+	var check = false;
+	   	if(p > 2) {
+   		p = p - 2;
+   		check = true;
+    }	
+	ulnode = SrcRptXmlDoc.documentElement.selectSingleNode('/srcrpt/uniqlines/uniqline[@id="' + id + '"]');	
+	if (ulnode == null) {
+		alert("uniqline with id of " + id + " not found.");
+	} else {
+		if(check) {
+			var I = ulnode.getAttribute("analysis");
+			//alert("I=" + I + "\nAnalysisAttrs[p]=" + AnalysisAttrs[p]);
+			if( I != 'nI' && I != 'I' ) ulnode.setAttribute("analysis", AnalysisAttrs[p]);
+		} else {
+			//alert("Setting UL with id\t" + AnaplysisAttrs[p] + "\t" + ulnode.getAttribute("id"));
+			ulnode.setAttribute("analysis", AnalysisAttrs[p]);
+			//color and font size can be set after testing analysis attr in stylesheet
+		}
+	}
+	//alert("setULAnalysis: id=" + id + "\nanalayzed=" + ulnode.getAttribute("analysis"));
+}
+
+// end of Mark methods
+
+// Anno derived from Mark
+// annotates a UL or a table of UL's
+// overrides ulMethod and tableMethod and adds NoteMethod
+//
+// id = 'keyTable' or 'nukeUL'
+// p =
+// c = comment string
+// i = noteid from of existing select option
+
+function Anno(id, c, i) {
+	Mark.call(this, 0, id);
+	this.NoteMethod = setNote;
+	this.ulMethod = setULAnnotation;
+	this.tableMethod = setTableAnnotation;
+	this.c = c;
+	this.i = i;
+	this.id = id;
+}
+
+// Anno methods
+
+function setNote(notenode) {
+	var notes = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/annotations');
+	// if there is not an annotation node, create one
+	if (notes.length == 0) {
+		var AnnotationNode= SrcRptXmlDoc.createNode(1, "annotations", "");
+		root = SrcRptXmlDoc.documentElement;
+		root.appendChild(AnnotationNode);
+	}
+	notes = SrcRptXmlDoc.documentElement.selectNodes('/srcrpt/annotations/note');
+	//alert("setULAnnotation: annotations node=" + this.i + "\nc=" + this.c + "\nlength=" + notes.length);
+	var annotes = SrcRptXmlDoc.documentElement.selectSingleNode('/srcrpt/annotations');
+	if (notenode == null) {
+		alert("notenode not found.");
+	} else {
+		if (this.i > 0) {
+			notenode.setAttribute("note",this.i);
+		} else {
+			var noteid = notes.length + 1;
+			notenode.setAttribute("note",noteid);
+			commentElem = SrcRptXmlDoc.createNode(1, "note", "");
+			commentElem.text = this.c;
+			commentElem.setAttribute("noteid",noteid);
+			annotes.appendChild(commentElem);
+		}
+	}
+}
+
+function setULAnnotation(id) {
+	var ulnode = SrcRptXmlDoc.documentElement.selectSingleNode('/srcrpt/uniqlines/uniqline[@id="' + id + '"]');	
+	this.NoteMethod(ulnode);
+}
+
+function setTableAnnotation(element) {
+	var members = element.rows; 
+	// alert("setTableAnnotation: element.rows.length" + element.rows.length + "\nelement.id=" + element.id);
+	var termNode = SrcRptXmlDoc.documentElement.selectSingleNode('/srcrpt/srchead/keywords/term[@keyid=' + members[0].nkid + ']' );
+    // For the Copyright Holder report, get the term from the first row.
+    if(!termNode)  termNode = SrcRptXmlDoc.documentElement.selectSingleNode('//file/line[@keyid = "' + members[0].nkid + '"]' );
+	this.NoteMethod(termNode);
+}
+
+// end of Anno methods
+
+//
+// existingNote derived from Anno
+// 
+
+function existingNote(h) {
+	Anno.call(this, h);
+	this.id = h;	
+	this.NoteMethod = getExistingNote;
+}
+
+// existingNote methods
+
+function getExistingNote(notenode) {
+	var noteid = notenode.getAttribute('note');
+	if (noteid) {
+		var notetextnode = SrcRptXmlDoc.documentElement.selectSingleNode('/srcrpt/annotations/note[@noteid=' + noteid + ']');
+		this.notetext = notetextnode.text; 
+	} else {
+		return 0;
+	}
+}
+
+// end of existingNote methods
+
+//
+// deleteExistingNoteAttr derived from existingNote
+//
+
+function deleteExistingNoteAttr(h) {
+	existingNote.call(this, h);
+	this.NoteMethod = deleteExistingNote;	
+}	
+
+// deleteExistingNoteAttr methods
+
+function deleteExistingNote(notenode) {
+	notenode.removeAttribute('note');
+}
+// end of deleteExistingNoteAttr methods
+
+// Begin invocation of Mark objects
+// (and objects derived from Mark)
+
+// ulTable called from analysis popup.  See srcrpti.xsl.
+// instantiates a Mark
+
+function ulTable(p, id) {
+	var UL = new Mark(p, id);
+	UL.doUlorTableMethod();	
+	globalProcessor.processnow();
+	CacheScreen(); 
+}
+
+// annotate()
+// called from b.html/8.xsl, the annotation popup
+// instantiates an Anno
+
+function annotate(c, h, i) {
+	var Ann = new Anno(h, c, i);
+	Ann.doUlorTableMethod();
+	globalProcessor.processnow();
+	CacheScreen();
+	return 1;
+}
+
+// getNote()
+// called from annotate_menu()
+// instantiates an existingNote
+
+function getNote(h) {
+	var thisNote = new existingNote(h);
+	thisNote.doUlorTableMethod();
+	return thisNote.notetext; 
+}
+
+// deleteNote()
+// called from b.html/8.xsl, the annotation popup
+// deletes a note - not from /srcrpt/annotations, 
+// the note attr pointing to /srcrpt/annotations/note
+// instantiates a deleteExistingNoteAttr
+
+function deleteNote(h) { 
+	var element = frame2.document.getElementById(h);
+	//alert("deleteNote: " + h);
+	var thisNote = new deleteExistingNoteAttr(h);
+	thisNote.doUlorTableMethod();	
+	globalProcessor.processnow();
+	CacheScreen(); 	
+	return 1;
+}
+
+// singleUL()
+// called from b.html/8.xsl as invoked from frame2 produced by 5.xsl
+// annotates a single UL
+// instantiates a Mark
+
+function singleUL(p, h) {
+	var element = frame2.document.getElementById(h);
+	var ulid = element.ulid;
+	var UL = new Mark(p, h);
+	UL.ulMethod(ulid, p);
+	menuPopup.hide();
+	globalProcessor.processnow();
+}
+
+// End invocation of Mark objects
+
+</script>
+</head>
+  <frameset onload=javascript:bodyonload("2.out.xml")  rows="37,*">
+    <frame name="frame1" src="x2.html" noresize scrolling="no" marginwidth="5" marginheight="1" APPLICATION="yes">
+    <frame name="frame2" frameborder="0" src="y.html" APPLICATION="yes">
+  </frameset>
+</html>

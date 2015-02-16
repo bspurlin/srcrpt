@@ -1,0 +1,253 @@
+    Copyright ©, 2004-2015, International Business Machines
+
+    This file is part of SrcRpt.
+  
+    SrcRpt is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, version 2.0.
+
+    SrcRpt is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SrcRpt.  If not, see http://www.gnu.org/licenses/.
+
+# See US Patent 8640101
+
+# A Copyright Holder Grammar consists of
+# 	Date sub-grammar 
+#	Symbol recognizer
+#	Short and  Long "copyright" recognizers
+#	Potential Copyright Statement sub-grammar
+#	Holder sub-grammar
+#	Middle Initial sub-grammar
+
+# A Context may produce a Date
+# "   "      "    "     a Symbol
+# "   "      "    "     the word "copyright"
+
+#  The Holder Grammar is not context-free.  It has only one production, the Middle Initial.
+#  It is defined by what a Holder is not, more than what it is.
+#  If there is anything left over after eliminating what a Holder is not, 
+#  that is the production, i. e., the Holder, in a negative sense.
+
+
+# The Copyright Holder Program recognizes a potential Copyright Statement,
+# based on the Date sub-grammar, the Symbol recognizer, 
+# the Short and  Long "copyright" recognizer and
+# the Potential Copyright Statement sub-grammar.
+# If the Potential Copyright Statement produces a Holder, success!
+
+BEGIN PROGRAM # pseudocode for a Copyright Holder Recognizer
+
+# BaseScan provides a framework for base regular expression recognition and data structures
+# to store the results: Holders associated with the Files to which they hold the Copyright.
+
+initialize Scan as BaseScan	
+CopyrightSymbolRegexp 	gets		'©|(c)|&#169;|&copy;'
+LongCopyrightRegexp 	gets		'{0,16}copyright.{0,128}|CopyrightSymbolRegexp'
+ShortCopyrightRegexp 	gets		'copyright{1,28}'
+
+Scan->Regexp		gets 		LongCopyrightRegexp
+
+Context gets Scan->getContext(LongCopyrightRegexp) 
+
+# Context has a string with up to 16 characters before and 128 characters after either
+# the word "copyright" or one of the four version of the copyright symbol.
+# Next, examine the Context and extract any potential copyright statements from it
+# as the Context may contain more than one copyright statement
+
+
+if detectMult(Context)
+	ArrayOfPotentialCopyrightStatements gets 
+		Scan->getMultipleCopyrightStatements(Context, ShortCopyrightRegexp)
+else ArrayOfPotentialCopyrightStatements gets Context
+
+for each PotentialStatement in ArrayOfPotentialCopyrightStatements
+	do
+		if Holder gets PotentialStatement->isStatement()
+			# It matches the Potential Copyright Statement Grammar and
+			# It has a Holder, so it is a copyright statement.
+			# Associate the file containing the statement with the holder
+			Holder->add(Holder->name, holderStorage)
+			Scan->holderStorage->addFile(Holder->name, PotentialStatement->File)
+		else
+			# Holder is FALSE
+			# Context has the word "copyright" or a copyright symbol,
+			# but it is not a copyright statement.  Put it in the dustbin
+			Scan->holderStorage->addToDustBin(PotentialStatement, holderStorage)
+	done
+END PROGRAM # pseudocode for a Copyright Holder Recognizer
+
+# FUNCTIONS:
+
+# isStatement is a recognizer based on the Potential Copyright Statement sub-grammar
+
+function isStatement(Context) returns Holder
+	BEGIN
+	DateArray gets Dates(Context)
+
+#  A few contextual tests:
+
+	if tooMany(positionOfCopyright(Context), DateArray)
+		return FALSE      # too many blank lines or characters between copyright and date to be a statement
+	if Symbol gets getSymbol(PotentialStatement)
+		BeforeSymbol gets beforeSymbol(PotentialStatement)
+		AfterSymbol gets afterSymbol(PotentialStatement)
+	if AfterSymbol
+		Context gets AfterSymbol # make the context what comes after the symbol
+						  # we will try BeforeSymbol later, if necessary
+
+# Potential copyright statement sub-grammar
+
+	if (
+			hasCopyright(Context) AND DateArray[1]) 
+			OR ( hasCopyright(Context) AND Symbol) 
+			OR (Symbol and DateArray[1]) 
+			OR (CopyrightBy(Context)
+		)
+		# The context is potentially a copyright statement.
+		# It has the word "copyright" and at least one date
+		# Or it has the word "copyright" and one of the Copyright Symbols
+		# Or it has one of the Copyright Symbols and at least one date
+		# Or it contains the n-gram "copyright by".
+		# The context may now be tested to see if it has a Holder
+	else
+		return FALSE
+	removeDates(Context)
+	removeDates(BeforeSymbol)  		# We don't need the dates anymore so discard them
+	Holder gets findHolder(Context)
+	if Holder == FALSE				# We didn't find a holder in what came after the symbol,
+									# so try what came before the symbol
+  		Holder gets findHolder(BeforeSymbol)
+
+# The Holder is either FALSE or some string (the Holder!) in either case, return it
+	return HOLDER		
+END	
+
+# getMultipleCopyrightStatements() recursively examines a string and returns 
+# an array of portential copyright statements that might be contained in the string
+
+function getMultipleCopyrightStatements(Context) returns ArrayOfPotentialStatements
+
+BEGIN
+	Scan->Regexp gets ShortCopyrightRegexp	# Flip to short regexp for finer grain examination of context
+	while (shortCopyrightContext gets getShortContext(Context))
+		push shortCopyrightContext onto TemporaryArrayOfPotentialCopyrightStatements
+											# recurse until no more potential copyright statements
+	for each possiblyShortContext in  TemporaryArrayOfPotentialCopyrightStatements
+	do
+		push getMultipleCopyrightStatements(possiblyShortContext) onto  ArrayOfPotentialCopyrightStatements
+	done
+	Scan->Regexp	gets Long CopyrightRegexp		# Flip back to long regexp
+	return ArrayOfPotentialCopyrightStatements
+END
+
+# Date sub-grammar
+
+function Dates(Context) returns DateArray
+
+BEGIN
+	regexp_date_1 gets '(?:19|20)\d[\d\s*-/,\n\r]*';
+	regexp_date_2 gets '\d\d(?:\d\d)?\/\d\d\/\d\d(?:\d\d)?';
+	regexp_date_3 gets '\d\d[-/\s]\w\w\w[-/\s]\d\d(?:\d\d)?';
+	regexp_date_4 gets '\d\d\/\d\d(?:\d\d)';
+	regexp_date_5 gets '\d\d\d\d\s+and\s+\d\d\d\d';
+	regexp_date_6 gets '\w\w\w\.?\s{1,2}\d{1,2},\s{0,2}\d\d\d\d';
+	do
+	   cutOutDate gets Scan->cutRegexp(Context, 
+	  	(date_1 OR date_2 OR date_3 OR date_4 OR date_5 OR date_6))
+	   push cutOutDate onto DateArray
+	until NOT cutOutDate
+	return DateArray
+END
+
+# Holder sub-grammar
+
+function findHolder(Context) returns Holder
+BEGIN
+	# The Context is something that may be a copyright statement,
+	# possibly multiple lines, possibly very short.
+	# If it has a Holder, is is indeed a copyright statement
+	# Eliminate everything in the Context that would disqualify it from being a Holder
+	# If there is anything left, it is a Holder
+	
+	Holder gets Context
+
+	# cope with certain strings
+	Holder->eliminate(<hexadecimal strings>)
+	if (NOT isEmail(Holder)
+		Holder->eliminate(<angle brackets and everything in between>)
+	Holder->eliminate(<"copyright" and everything before>)	
+	Holder->replace(<"all rights reserved by" (someone)> with <(someone)>)
+	Holder->replace(<"by"> OR <"the"> with space)
+	Holder->eliminate(<"this" and everything after>)
+	Holder->eliminate(<"all rights " and everything after>)
+	Holder->eliminate(<"licen[cs]"> and everything after)
+
+	# cope with dots
+	if (Holder gets copeWithMiddleInitials(Holder))
+		# The dot is part of a middle initial, make the Holder the person's name and keep going
+	else if (Holder gets extractHref(Holder))
+		# The dot is part of an anchor tag, make the Holder the URL and keep going
+	else if  (Holder->isEmail)
+		Email gets extractEmail(Holder)
+		# The dot is part of an e-mail address, save the address for later use and keep going
+	else Holder->eliminate("." and everything after>)
+	
+	Holder->eliminate("*")
+	Holder->eliminate(<space, ";", ":", "-", EOL> as leading characters>)
+	Holder->eliminate(blank lines)
+	Holder->replace(<EOL> OR <"'"> OR <"/"> with space)
+	Holder->eliminate(certain macro identifiers)
+	Holder->eliminate(parentheses with double quotes but not what is in between)
+	Holder->eliminate(<","> OR <"."> OR space OR <";> OR <""">)
+	Holder->eliminate(<"#"> as leading character)
+	Holder->eliminate(
+		   <"*"> 
+		OR <"-"> 
+		OR <";"> 
+		OR <"/"> 
+		OR <"}"> 
+		OR <"+"> 
+		OR <"{"> 
+		OR <"&"> 
+		OR <"]"> 
+		OR <"="> 
+		as trailing characters)
+	Holder->eliminate(<"""> OR <"?"> OR <"\">  and everything after)
+	Holder->replace(<less-than entity(something)greater-than entity> with (something))
+	if (Holder->containsCharacterEntity)
+		# keep going
+	else Holder->eliminate(<";"> OR <"&"> OR <"#"> and everything after)
+	Holder->eliminate(space as trailing character)
+	Holder->eliminate(four or more spaces and everything after)
+	Holder->eliminate(four or more <"="> and everything after)
+	Holder->eliminate(<"\n"> as trailing character)
+	Holder->eliminate(<","> OR space OR  <"."> OR <"]"> OR <"-"> as trailing character)
+	Holder->replace(<more than two spaces> with space)
+	Holder->eliminate(spaces as leading characters)
+	if (Holder consists of one character)
+		# A holder consisiting of a single character is not enough to be comprehensible
+		Holder gets FALSE
+	if (Holder == FALSE or Holder->isEmpty)
+		Holder gets Email  # or nothing, if Email is empty
+	if (Holder->isEmpty)
+		Holder gets FALSE
+	return Holder
+END
+	
+# Middle initial sub-grammar
+		
+function copeWithMiddleInitials(Holder) returns Holder
+BEGIN
+	 if (Holder contains a string followed by a space followed by 
+	 a single capital letter followed by a dot followed by a space
+	 followed by a string)
+	 	concatenate the above and return it
+	 else
+	 	return Holder
+END
+

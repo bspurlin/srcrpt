@@ -1,0 +1,238 @@
+<html>
+
+  <!--
+
+  x2.html
+
+    Copyright (c) IBM Corp. 2004,2007 All Rights Reserved
+
+    This file is part of SrcRpt.
+  
+    SrcRpt is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, version 2.0.
+
+    SrcRpt is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SrcRpt.  If not, see http://www.gnu.org/licenses/.
+
+
+  -->
+
+  <!-- author wspurlin@us.ibm.com -->
+
+  <head>
+    <style type="text/css">
+    <!--
+    .x2controls {
+	font-family: Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+	background-color: #DDCCCC;
+    }
+    -->
+    </style>
+
+<script type="text/javascript" src="srcrpt.js"></script>
+<script>
+
+ var menuPopup = window.createPopup();
+    
+ var compare;
+
+
+function doFileMenu(oHeight)
+{
+    menuPopup.document.body.innerHTML = fileMenuDiv.innerHTML;
+    menuPopup.show(event.offsetX, event.offsetY + 30, 80, oHeight, document.body);
+    document.body.onmouseup = menuPopup.hide;
+}
+
+function doViewMenu(oHeight)
+{
+    menuPopup.document.body.innerHTML = viewMenuDiv.innerHTML;
+    menuPopup.show(event.offsetX, event.offsetY + 30, 80, oHeight, document.body);
+    document.body.onmousedown = menuPopup.hide;
+}
+
+
+function parentOpen(F,wd) {
+    //alert("Open " + F + " working dir=" + wd);
+    parent.bodyonload(F,wd);
+}
+
+function parentSave(fn) {
+    parent.saveXML(fn);
+    menuPopup.hide();
+}
+
+function parentCompare(fn, x, y, coa) {
+    parent.compareXML(fn, x, y, coa);
+    menuPopup.hide();
+}
+
+
+function parentRmDir(dirn, x, y) {
+    //alert("dirn=" + dirn  + "x=" + x  + "y=" + y );
+    parent.RmDir(dirn, x, y, name);
+}
+
+function setCompare(i) {
+    compare = i;
+}
+
+function diffOff (p)  {
+    parent.diffOff = diffonoff.checked ? 1 : 0;
+    parent.globalProcessor.processnow();
+    menuPopup.hide();
+    //    parent.frame2.test.innerHTML = diffonoff.checked + "<br>" + diffonoff.value  + "<br>" +  parent.globalProcessor.savprefix;
+    diffonoff.checked = !diffonoff.checked;
+}
+
+function doneOff (p)  {
+    parent.doneOff = doneonoff.checked ? 1 : 0;
+    parent.globalProcessor.processnow();
+    menuPopup.hide();
+    //    parent.frame2.test.innerHTML = diffonoff.checked + "<br>" + diffonoff.value  + "<br>" +  parent.globalProcessor.savprefix;
+    doneonoff.checked = !doneonoff.checked;
+}
+
+function refresh () {
+	parent.globalProcessor.processnow();
+	parent.CacheScreen();
+	menuPopup.hide();
+}
+
+function doHelpMenu (oHeight) {
+   mywindow=window.open("README.html#anatop",
+			 "mywindow",
+			 "height=400,width=800,left=0,scrollbars=yes,status=yes,resizable=yes"
+			 );
+}
+
+  </script>
+</head>
+<body>
+    <table border=0 margin=0 padding=0 width="100%" style="background-color: #D2D2D2">
+      <tr>
+	<td width="3"><img height="37" width="2" alt="" src="res://wmploc.dll/2/1706"></td>
+	<td align="center" class="x2controls">
+	  <SPAN style="CURSOR: hand; FONT: larger sans-serif" onclick="javascript:doFileMenu(140)"> File </span>
+	</td>
+	<td width="3"><img height="37" width="2" alt="" src="res://wmploc.dll/2/1706"></td>
+	<td align="center" class="x2controls">
+	  <SPAN style="CURSOR: hand; FONT: larger sans-serif" onclick="javascript:doViewMenu(130)"> View </span>
+	</td>
+	<td width="3"><img height="37" width="2" alt="" src="res://wmploc.dll/2/1706"></td>
+	<td>
+	<table>
+		<tr>
+	  		<td><button class="x2controls" onclick=javascript:parent.keywords()> Keywords </button></td>
+	  		<td><button class="x2controls" onclick=javascript:parent.analyze_keywords()>Analyze</button></td>
+	  		<td><button class="x2controls" onclick=javascript:parent.keywords_long()> Keywords Long</button></td>
+	  		<td><button class="x2controls" onclick=javascript:parent.headers()> Headers </button></td>
+		</tr>
+	</table>
+	</td>
+	<td align="center"   style="FONT: smaller sans-serif" border="0" id="prev_next">
+	    Prev
+	</td>
+	<td>
+	  <button class="x2controls" onclick=javascript:parent.save_tmpDoc()>Save Report</button>
+	</td>
+	<td>
+	  <button class="x2controls" onclick=javascript:parent.files()> Files </button>
+	</td>
+	<td width="3"><img height="37" width="2" alt="" src="res://wmploc.dll/2/1706"></td>
+	<td align="center" class="x2controls">
+	  
+	  <a href="README.html#anatop" target="helpwindow">Help</a>
+	</td>
+	<td width="3"><img height="37" width="2" alt="" src="res://wmploc.dll/2/1706"></td>	
+	<td id="test">
+	</td>
+	
+      </tr>
+ </table>
+
+
+<!-- Menu formatting -->
+
+<DIV id=fileMenuDiv style="DISPLAY: none">
+
+   <TABLE 	style="BORDER: none; 
+		font-family: sans-serif; 
+		font-size: 14px; 
+		Z-INDEX: 3; 
+		BACKGROUND: #d0d0c8; 
+		LEFT: 0px; 
+		POSITION: absolute; 
+		TOP: 0px; 
+		HEIGHT: 100px">
+
+      <TR><TD id=fileOpenII 
+style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" 
+onclick="javascript:parent.setCompare(0); parent.menuDialog('z4.html',400,600)">Open...
+      </td><tr>
+
+      <tr><td id=fileOpenIII
+style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" 
+onclick="javascript:parent.menuDialog('a.html',100,300)">Save As...
+      </td><tr>
+      
+      <tr><td id=fileOpenIV
+style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" 
+onclick="javascript:parent.parentSave()">Save</INPUT>
+      </td><tr>      
+      
+      <tr><td id=fileOpenV
+style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" 
+onclick="javascript:parent.setCompare(1);parent.menuDialog('z4.html',400,600)">Compare...</INPUT>
+      </td><tr>    
+
+     
+      <tr><td id=fileOpenVI
+style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0" 
+onclick="javascript:parent.setCompare(2);parent.menuDialog('z4.html',400,600)">Remove Dir...</INPUT>
+      </td><tr>      
+      
+   </TABLE>
+
+</DIV>
+
+<DIV id=viewMenuDiv style="DISPLAY: none">
+
+   <TABLE style="BORDER: none; 
+		font-family: sans-serif; 
+		font-size: 12px; 
+		Z-INDEX: 3; 
+		BACKGROUND: #d0d0c8; 
+		LEFT: 0px; 
+		POSITION: absolute; 
+		TOP: 0px; 
+		HEIGHT: 100px">
+
+	<TR><TD id=viewSelect 
+      style="BORDER: black 1px solid; CURSOR: hand; COLOR: #0">
+      
+
+      <INPUT type="radio" name="diffonoff" checked="true" onclick=javascript:parent.diffOff('xxx') >Old Diffs</input>
+      <br></br>
+
+      <INPUT type="radio" name="doneonoff" checked="true" onclick=javascript:parent.doneOff('xxx') >Done</input>
+      <br></br>
+      
+      <BUTTON name="refresh"  onclick=javascript:parent.refresh('xxx') >Refresh</BUTTON>
+
+      </td></tr>
+
+   </TABLE>
+
+</DIV>
+
+  </body>
+</html>

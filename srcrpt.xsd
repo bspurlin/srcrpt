@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+    Copyright ©, 2004-2008, International Business Machines
+
+    This file is part of SrcRpt.
+  
+    SrcRpt is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, version 2.0.
+
+    SrcRpt is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SrcRpt.  If not, see http://www.gnu.org/licenses/.
+
+-->
+
+<!-- author Bill Spurlin wj@spurlin.org -->
+
+
+
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://brumaire.lexma.ibm.com/LM_1"
+	xmlns="http://brumaire.lexma.ibm.com/LM_1"
+
+	>
+
+	<xsd:element name="srcrpt">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element ref="srchead" minOccurs="1" />
+				<xsd:element ref="hits" />
+				<xsd:element ref="uniqlines" />
+				<xsd:element ref="summary" />
+				<xsd:element ref="licensefiles" />
+				<xsd:element ref="binaries" />
+				<xsd:element ref="annotations" />
+			</xsd:sequence>
+		</xsd:complexType>
+
+		<xsd:key name="ULKey">
+			<xsd:selector xpath="srcrpt/uniqlines/uniqline"></xsd:selector>
+			<xsd:field xpath="@id"></xsd:field>
+		</xsd:key>
+
+		<xsd:keyref name="summary_keyword_hit_ulid" refer="ULKey">
+			<xsd:selector xpath="summary/keyword/hit"></xsd:selector>
+			<xsd:field xpath="@ulid"></xsd:field>
+		</xsd:keyref>
+
+		<xsd:keyref name="hits_file_line_ulid" refer="ULKey">
+			<xsd:selector xpath="hits/file/line"></xsd:selector>
+			<xsd:field xpath="@ulid"></xsd:field>
+		</xsd:keyref>
+
+	</xsd:element>
+
+	<xsd:element name="srchead">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element ref="timestamp" minOccurs="1" />
+				<xsd:element ref="commandline" minOccurs="1" />
+				<xsd:element name="user" minOccurs="0"></xsd:element>
+				<xsd:element name="date" type="xsd:date"
+					minOccurs="0">
+				</xsd:element>
+				<xsd:element ref="keywordfile" minOccurs="1" />
+				<xsd:element ref="keywords" minOccurs="1" />
+				<xsd:element ref="startdir" minOccurs="1" />
+				<xsd:element ref="excluded" />
+				<xsd:element ref="excludedfiles" />
+				<xsd:element ref="nfiles" minOccurs="1" />
+			</xsd:sequence>
+			<xsd:attribute name="scanid"/>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="timestamp">
+		<xsd:complexType mixed="true">
+			<xsd:attribute name="username" type="xsd:string" />
+			<xsd:attribute name="hostname" type="xsd:string" />			
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="commandline" type="xsd:string" />
+	<xsd:element name="keywordfile" type="xsd:string" />
+
+	<xsd:element name="keywords">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element maxOccurs="unbounded" ref="term" />
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="term">
+		<xsd:complexType mixed="true">
+			<xsd:attribute name="is_regexp" type="xsd:string" />
+			<xsd:attribute name="keyid" type="xsd:string" />
+			<xsd:attribute name="note" type="xsd:string" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="startdir">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element ref="dir" />
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="dir" type="xsd:string" />
+
+	<xsd:element name="excluded">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element ref="prefixorsuffix"
+					maxOccurs="unbounded">
+				</xsd:element>
+			</xsd:sequence>
+			<xsd:attribute name="n" type="xsd:string" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="prefixorsuffix" type="xsd:string" />
+	<xsd:element name="excludedfiles">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="excludedfile" minOccurs="0"></xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="nfiles" type="xsd:string" />
+
+	<xsd:element name="hits">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element maxOccurs="unbounded" ref="file" />
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="file" type="FileType"/>
+
+	<xsd:simpleType name="version_type">
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="none" />
+			<xsd:pattern value="[\d._a-zA-Z\-]{1,16})" />
+		</xsd:restriction>
+	</xsd:simpleType>
+
+
+	<xsd:complexType name="FileType">
+		<xsd:sequence>
+			<xsd:element name="line" maxOccurs="unbounded" minOccurs="0">
+				<xsd:complexType>
+					<xsd:attribute name="filpos" type="xsd:string" />
+					<xsd:attribute name="keyid" type="xsd:string" />
+					<xsd:attribute name="keyword" type="xsd:string" />
+					<xsd:attribute name="match" type="xsd:string" />
+					<xsd:attribute name="ulid" type="xsd:string" />
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+		<xsd:attribute name="name" type="xsd:string" />
+		<xsd:attribute name="color" type="xsd:string" />
+		<xsd:attribute name="version" type="version_type" />
+	</xsd:complexType>
+
+	<xsd:element name="uniqlines">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element maxOccurs="unbounded" ref="uniqline" />
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="licensefile" type="xsd:string" />
+
+	<xsd:element name="uniqline">
+		<xsd:complexType mixed="true">
+			<xsd:attribute name="analysis" type="xsd:string" />
+			<xsd:attribute name="id" type="xsd:string" />
+			<xsd:attribute name="note" type="xsd:string" />
+			<xsd:attribute name="color" type="xsd:string" />
+		</xsd:complexType>
+
+	</xsd:element>
+
+	<xsd:element name="summary">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element maxOccurs="unbounded" ref="keyword" />
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="keyword">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element ref="hit" maxOccurs="unbounded"
+					minOccurs="0">
+				</xsd:element>
+			</xsd:sequence>
+			<xsd:attribute name="name" type="xsd:string" />
+			<xsd:attribute name="keyid" type="xsd:string" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="hit">
+		<xsd:complexType>
+
+			<xsd:attribute name="hitcount" type="xsd:string" />
+			<xsd:attribute name="match" type="xsd:string" />
+			<xsd:attribute name="ulid" type="xsd:string" />
+
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="licensefiles">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element ref="licensefile" minOccurs="0"
+					maxOccurs="unbounded" />
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="binaries">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element maxOccurs="unbounded" ref="binary" />
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="binary" type="xsd:string" />
+
+	<xsd:element name="annotations">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element maxOccurs="unbounded" ref="note" />
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="note">
+		<xsd:complexType mixed="true">
+			<xsd:attribute name="noteid" type="xsd:string" />
+		</xsd:complexType>
+	</xsd:element>
+
+</xsd:schema>
